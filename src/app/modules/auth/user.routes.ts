@@ -8,8 +8,9 @@ import { authControllers } from "./user.controller";
 
 
 const router = Router();
-router.post('/userRegistration',validateRequest(authValidation.registerZodSchema), authControllers.userRegistration,);
-router.post('/verifyEmail',validateRequest(authValidation.verifyEmailZodSchema), authControllers.verifyEmailController,);
+router.post('/userRegistration',validateRequest(authValidation.requestOtpZodSchema), authControllers.userRegistration,);
+router.post('/verifyEmail',validateRequest(authValidation.verifyEmailZodSchemar), authControllers.verifyEmailController,);
+router.post('/setPassword',validateRequest(authValidation.setPasswordValidationSchema), authControllers.setPasswordController,);
 router.post('/login',validateRequest(authValidation.loginZodSchema), authControllers.login,);
 router.post( '/refresh-token',validateRequest(authValidation.refreshTokenValidationSchema),authControllers.refreshToken,);
 router.post('/google', authControllers.googleLogin);

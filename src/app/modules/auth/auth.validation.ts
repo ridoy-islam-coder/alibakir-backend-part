@@ -110,14 +110,18 @@ import { z } from 'zod';
 //   }),
 // });
 
-
+export const requestOtpZodSchema = z.object({
+  body: z.object({
+    email: z.string().nonempty('Email is required').email('Must be a valid email'),
+  }),
+});
 
 
 export const registerZodSchema = z.object({
   body: z.object({
     email: z.string().nonempty('Email is required').email('Must be a valid email'),
     password: z.string().min(6, 'Password must be at least 6 characters').optional(),
-    fullName: z.string().nonempty('Full name is required'),
+    fullName: z.string().nonempty('Full name is required').optional(),
     phoneNumber: z.string().optional(),
     countryCode: z.string().optional(),
     accountType: z.enum(['custom', 'google', 'facebook']).default('custom'),
@@ -152,6 +156,13 @@ export const verifyEmailZodSchema = z.object({
       .refine((val) => val !== undefined && val !== null, {
         message: 'OTP is required',
       }),
+  }),
+});
+
+export const verifyEmailZodSchemar = z.object({
+  body: z.object({
+    email: z.string().nonempty('Email is required').email('Must be a valid email'),
+    otp: z.number().refine(val => val !== undefined && val !== null, { message: 'OTP is required' }),
   }),
 });
 
@@ -198,10 +209,41 @@ export const deleteAccountZodSchema = z.object({
     password: z.string().nonempty('Password is required'),
   }),
 });
+
+
+
+export const setPasswordValidationSchema = z.object({
+  body: z.object({
+    email: z
+      .string()
+      .nonempty('Email is required')
+      .email('Must be a valid email'),
+
+    newPassword: z
+      .string()
+      .nonempty('New password is required')
+      .min(6, 'Password must be at least 6 characters'),
+
+    confirmPassword: z
+      .string()
+      .nonempty('Confirm password is required'),
+  }),
+}).refine((data) => data.body.newPassword === data.body.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['body.confirmPassword'],
+});
+
+
+
+
+
 export const authValidation = {
+  verifyEmailZodSchemar,
+  requestOtpZodSchema,
   registerZodSchema,
   verifyEmailZodSchema,
   loginZodSchema,
+  setPasswordValidationSchema,
   refreshTokenValidationSchema,
   changePasswordZodSchema,
   resetPasswordZodSchema,

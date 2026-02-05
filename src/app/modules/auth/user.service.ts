@@ -3,7 +3,7 @@ import config from "../../config";
 import AppError from "../../error/AppError";
 import User from "../user/user.model";
 import { createToken, verifyToken } from "./auth.utils";
-import { TchangePassword, Tlogin, TRegister, TresetPassword } from "./user.interface";
+import { TchangePassword, Tlogin, TRegister, TresetPassword, VerifyOtpPayload } from "./user.interface";
 import  httpStatus  from 'http-status';
 import { generateOtp } from "../../utils/otpGenerator";
 import moment from 'moment';
@@ -16,81 +16,32 @@ import { UserRole } from '../user/user.interface';
 // otpCache: in-memory Map or Redis
 const otpCache = new Map<string, { payload: TRegister; otp: number; expiresAt: Date }>();
 
-// const register = async (payload: TRegister) => {
-//   // check existing email
-//   const isEmailExist = await User.isUserExist(payload.email);
-//   if (isEmailExist) {
-//     throw new AppError(httpStatus.BAD_REQUEST, 'Email already exists');
-//   }
-
-//   // phone check
-//   const isPhoneExist = await User.isUserExistByNumber(
-//     payload.countryCode,
-//     payload.phoneNumber
-//   );
-//   if (isPhoneExist) {
-//     throw new AppError(httpStatus.BAD_REQUEST, 'Phone number already exists');
-//   }
-
-//   // generate OTP
-//   const otp = generateOtp();
-//   const expiresAt = moment().add(5, 'minute').toDate();
-
-//   otpCache.set(payload.email, { payload, otp, expiresAt });
-
-//   // send OTP email
-//   await sendEmail(
-//     payload.email,
-//     'Verify your email',
-//     `<div>
-//       <h4>Your verification OTP</h4>
-//       <h2>${otp}</h2>
-//       <p>Valid till: ${expiresAt.toLocaleString()}</p>
-//     </div>`
-//   );
-
-//   return { email: payload.email };
-// };
 
 
 
 
 export const register = async (email: string) => {
-  // basic email check
-  if (!email) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Email is required');
-  }
 
- // generate OTP
-  const otp = generateOtp();
-  const expiresAt = moment().add(5, 'minute').toDate();
+   if (!email) throw new Error('Email is required');
 
-  const user = await User.findOne({ email });
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  const expiresAt = moment().add(20, 'minutes').toDate();
 
-  // ❌ already verified
+  let user = await User.findOne({ email });
+
   if (user && user.isVerified) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Email already verified');
+    throw new Error('Email already verified');
   }
 
   if (user) {
-    // 🔁 resend OTP
-    user.verification = {
-      otp,
-      expiresAt,
-      status: false,
-    };
+    user.verification = { otp, expiresAt, status: false };
     await user.save();
   } else {
-    // 🆕 create temporary user
-    await User.create({
+    user = await User.create({
       email,
-      accountType: 'customer',
       isVerified: false,
-      verification: {
-        otp,
-        expiresAt,
-        status: false,
-      },
+      accountType: 'custom',
+      verification: { otp, expiresAt, status: false },
     });
   }
 
@@ -162,7 +113,7 @@ export const register = async (email: string) => {
 
 
   return {
-    message: 'OTP sent to your email',
+    message: `OTP sent to your email ${email}`,
   };
 };
 
@@ -174,46 +125,35 @@ export const register = async (email: string) => {
 
 
 
-const verifyEmail = async (email: string, otpInput: number) => {
-  const otpData = otpCache.get(email);
-  if (!otpData) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'No OTP request found');
+ const verifyEmail = async ({ email, otp }: VerifyOtpPayload) => {
+   const user = await User.findOne({ email });
+
+  if (!user || !user.verification) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'OTP expired or not requested');
   }
 
-  if (moment().isAfter(otpData.expiresAt)) {
-    otpCache.delete(email);
-    throw new AppError(httpStatus.BAD_REQUEST, 'OTP expired');
-  }
-
-  if (otpData.otp !== otpInput) {
+  // OTP match check (number vs number)
+  if (user.verification.otp !== otp) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Invalid OTP');
   }
 
-  // ✅ OTP verified → now save user in DB
-  const payload = otpData.payload;
+  // Expiry check
+  if (user.verification.expiresAt < new Date()) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'OTP expired');
+  }
 
-  const user = await User.create({
-    email: payload.email,
-    password: payload.password,
-    fullName: payload.fullName,
-    phoneNumber: payload.phoneNumber,
-    countryCode: payload.countryCode,
-    gender: payload.gender,
-    role: UserRole.customer,
-    isVerified: true,
-    verification: {
-      otp: null,
-      expiresAt: null,
-      status: true,
-    },
-  });
+user.isVerified = true;
+user.verification.status = true;
 
-  // OTP remove from cache
-  otpCache.delete(email);
+// যদি empty থাকে, temporary assign করো
+user.fullName = user.fullName || '';
+user.phoneNumber = user.phoneNumber || '';
+user.countryCode = user.countryCode || '';
+user.gender = user.gender || 'Male'; // অথবা default
+await user.save();
 
   return user;
 };
-
 
 
 
@@ -591,6 +531,56 @@ export const userVerifyOtp = async (email: string, otpInput: number) => {
 
 
 
+export const SetPasswordService = async (
+  email: string,
+  newPassword: string,
+) => {
+  const user = await User.findOne({ email }).select('+password');
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  // OTP verify check
+  if (!user.verification || user.verification.status !== true) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'OTP not verified');
+  }
+
+  // ✅ Hash password
+  // const hashedPassword = await bcrypt.hash(
+  //   newPassword,
+  //   Number(config.bcrypt_salt_rounds),
+  // );
+  user.password = newPassword;
+
+  // ✅ Clear OTP data
+  user.verification = {
+    otp: null,
+    expiresAt: null,
+    status: false,
+  } as any;
+
+  await user.save();
+
+  return null;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -633,6 +623,7 @@ export const authServices = {
   register,
   verifyEmail,
   login,
+  SetPasswordService,
   userVerifyOtp,
   sendVerificationCode,
   changePassword,

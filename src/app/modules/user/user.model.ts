@@ -38,42 +38,40 @@ const UserSchema = new Schema<TUser, UserModel>(
     email: {
       type: String,
       unique: true,
-     required: function(this: TUser) {
-     return this.accountType === 'customer';
+      required: function(this: TUser) {
+    return this.isVerified === true;
   },
     },
     image: imageSchema,
     fullName: {
       type: String,
-      required: true,
+    //    required: function(this: TUser) {
+    // return this.isVerified === true;
+  // },
     },
     password: {
       type: String,
-        required: function (this: TUser) {
-        return this.accountType === 'customer';
-      },
+      required: function(this: TUser) {
+      return this.isVerified === true;
+   },
       default: '',
       select: false,
     },
-    countryCode: {
-      type: String,
-        required: function (this: TUser) {
-        return this.accountType === 'customer';
-      }, 
-      sparse: true, // 🔥 important
-      default: '',
-    },
+    // countryCode: {
+    //   type: String,
+    //   required: function(this: TUser) { return this.isVerified === true; },
+    //   sparse: true, // 🔥 important
+      
+    // },
 
-    phoneNumber: {
-      type: String,
-      // required: true,
-        required: function (this: TUser) {
-         return this.accountType === 'customer';
-      }, 
-      sparse: true, // ⚡ social login এর জন্য
-      unique: true,
-      default: '',
-    },
+    // phoneNumber: {
+    //   type: String,
+    //   // required: true,
+    //   required: function(this: TUser) { return this.isVerified === true; },
+    //   sparse: true, // ⚡ social login এর জন্য
+    //   unique: true,
+    
+    // },
     needsPasswordChange: {
       type: Boolean,
       default: false,
@@ -96,9 +94,9 @@ const UserSchema = new Schema<TUser, UserModel>(
     gender: {
       type: String,
       enum: ['Male', 'Female'],
-      required: function (this: TUser) {
-        return this.accountType === 'customer';
-      }, 
+         required: function(this: TUser) {
+        return this.isVerified === true;
+       }, 
     },
     subscription: {
       plan: {

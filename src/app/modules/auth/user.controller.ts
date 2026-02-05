@@ -81,29 +81,49 @@ const userRegistration = catchAsync(async (req: Request, res: Response) => {
 
 
 
-const verifyEmailController = catchAsync(async (req: Request, res: Response) => {
+// const verifyEmailController = catchAsync(async (req: Request, res: Response) => {
+//   const { email, otp } = req.body;
+
+//   // verifyOtp service → OTP check + DB save
+//   const user = await authServices.verifyEmail(email, Number(otp));
+
+//   sendResponse(res, {
+//     statusCode: httpStatus.CREATED,
+//     success: true,
+//     message: 'OTP verified successfully. User registration complete.',
+//     data: {
+//       _id: user._id,
+//       email: user.email,
+//       fullName: user.fullName,
+//       phoneNumber: user.phoneNumber,
+//       countryCode: user.countryCode,
+//       gender: user.gender,
+//       role: user.role,
+//       isVerified: user.isVerified,
+//     },
+//   });
+// });
+
+export const verifyEmailController = async (req: Request, res: Response) => {
   const { email, otp } = req.body;
 
-  // verifyOtp service → OTP check + DB save
-  const user = await authServices.verifyEmail(email, Number(otp));
+  // const user = await authServices.verifyEmail({ email, otp });
 
-  sendResponse(res, {
-    statusCode: httpStatus.CREATED,
+  const numericOtp = Number(otp);
+  if (isNaN(numericOtp)) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'OTP must be a number');
+  }
+const user = await authServices.verifyEmail ({ email, otp: numericOtp });
+
+  res.status(httpStatus.OK).json({
     success: true,
-    message: 'OTP verified successfully. User registration complete.',
+    message: 'Email verified successfully',
     data: {
-      _id: user._id,
       email: user.email,
-      fullName: user.fullName,
-      phoneNumber: user.phoneNumber,
-      countryCode: user.countryCode,
-      gender: user.gender,
-      role: user.role,
       isVerified: user.isVerified,
     },
   });
-});
-
+};
 
 const login = catchAsync(async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -529,6 +549,47 @@ export const userResetPassword = catchAsync(
       data: {},
     });
   },
+
+
+
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const setPasswordController = catchAsync(
+  async (req: Request, res: Response) => {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    if (!email || !newPassword || !confirmPassword) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        'Email, newPassword and confirmPassword are required',
+      );
+    }
+
+    if (newPassword !== confirmPassword) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Passwords do not match');
+    }
+
+    await authServices.SetPasswordService(email, newPassword);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Password reset successful',
+      data: {},
+    });
+  },
 );
 
 export const authControllers = {
@@ -541,6 +602,7 @@ export const authControllers = {
   linkedInLogin,
   googleLogin,
   facebookLogin,
+  setPasswordController,
   userRegistration,
   appleLogin,
   verifyEmailController,

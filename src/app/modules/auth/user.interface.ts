@@ -38,3 +38,9 @@ export type TRegister = {
     lastName?: string;
   };
 }
+
+
+export interface VerifyOtpPayload {
+  email: string;
+  otp: number;
+}
