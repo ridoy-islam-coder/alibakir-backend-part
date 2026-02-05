@@ -52,55 +52,119 @@ const otpCache = new Map<string, { payload: TRegister; otp: number; expiresAt: D
 //   return { email: payload.email };
 // };
 
-const register = async (payload: TRegister) => {
-  // email check
-  const isEmailExist = await User.isUserExist(payload.email);
-  if (isEmailExist) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Email already exists');
+
+
+
+export const register = async (email: string) => {
+  // basic email check
+  if (!email) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Email is required');
   }
 
-  // phone check
-  const isPhoneExist = await User.isUserExistByNumber(
-    payload.countryCode,
-    payload.phoneNumber
-  );
-  if (isPhoneExist) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Phone number already exists');
-  }
-
-  // generate OTP
+ // generate OTP
   const otp = generateOtp();
   const expiresAt = moment().add(5, 'minute').toDate();
 
-  // 👉 create user with verification
-  const user = await User.create({
-    ...payload,
-    isVerified: false,
-    verification: {
+  const user = await User.findOne({ email });
+
+  // ❌ already verified
+  if (user && user.isVerified) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Email already verified');
+  }
+
+  if (user) {
+    // 🔁 resend OTP
+    user.verification = {
       otp,
       expiresAt,
       status: false,
-    },
-  });
+    };
+    await user.save();
+  } else {
+    // 🆕 create temporary user
+    await User.create({
+      email,
+      accountType: 'customer',
+      isVerified: false,
+      verification: {
+        otp,
+        expiresAt,
+        status: false,
+      },
+    });
+  }
 
-  // send email
-  await sendEmail(
-    payload.email,
-    'Verify your email',
-    `<div>
-      <h4>Your verification OTP</h4>
-      <h2>${otp}</h2>
-      <p>Valid till: ${expiresAt.toLocaleString()}</p>
-    </div>`
-  );
+ await sendEmail(
+  email,
+  'Verify Your Email Address',
+  `
+  <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f8; padding: 20px;">
+    <div style="
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    ">
+
+      <!-- Logo -->
+      <img 
+        src="https://yourdomain.com/logo.png" 
+        alt="Logo"
+        style="width: 120px; margin-bottom: 20px;"
+      />
+
+      <!-- Title -->
+      <h2 style="color: #222; margin-bottom: 10px;">
+        Email Verification
+      </h2>
+
+      <p style="color: #555; font-size: 15px; line-height: 1.6;">
+        Thank you for signing up!  
+        Please use the verification code below to confirm your email address.
+      </p>
+
+      <!-- OTP Box -->
+      <div style="
+        display: inline-block;
+        margin: 25px 0;
+        padding: 15px 30px;
+        font-size: 28px;
+        letter-spacing: 6px;
+        color: #ffffff;
+        background-color: #4CAF50;
+        border-radius: 6px;
+        font-weight: bold;
+      ">
+        ${otp}
+      </div>
+
+      <!-- Expiry -->
+      <p style="color: #777; font-size: 13px;">
+        This code will expire on: ${expiresAt.toLocaleString()}
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+
+      <!-- Footer -->
+      <p style="color: #999; font-size: 12px; line-height: 1.5;">
+        If you did not create an account using this email address,  
+        please ignore this message.
+        <br />
+        For your security, do not share this verification code with anyone.
+      </p>
+    </div>
+  </div>
+  `
+);
+
 
   return {
-    message: 'Registration successful. Please verify your email.',
-    userId: user._id,
+    message: 'OTP sent to your email',
   };
 };
-
-
 
 
 
@@ -149,6 +213,56 @@ const verifyEmail = async (email: string, otpInput: number) => {
 
   return user;
 };
+
+
+
+
+
+
+// const verifyEmail = async (email: string, otp: number) => {
+//   const user = await User.findOne({ email });
+
+//   if (!user || !user.verification) {
+//     throw new AppError(404, 'User not found');
+//   }
+
+//   if (user.verification.status) {
+//     throw new AppError(400, 'Already verified');
+//   }
+
+//   if (user.verification.expiresAt < new Date()) {
+//     throw new AppError(400, 'OTP expired');
+//   }
+
+//   if (user.verification.otp !== otp) {
+//     throw new AppError(400, 'Invalid OTP');
+//   }
+
+//   user.isVerified = true;
+//   user.verification.status = true;
+
+//   await user.save();
+
+//   return { message: 'Email verified successfully' };
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -9,7 +9,7 @@ import jwt, { JwtPayload, Secret  } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import config from '../../config';
 import sendResponse from '../../utils/sendResponse';
-import { authServices, userResetPasswordService, } from './user.service';
+import { authServices, register, userResetPasswordService, } from './user.service';
 import { UserRole } from '../user/user.interface';
 // import { AuthServices } from './user.service';
 import * as appleSignin from 'apple-signin-auth';
@@ -64,15 +64,14 @@ if (!user) {
 
 
 const userRegistration = catchAsync(async (req: Request, res: Response) => {
-  // register service থেকে OTP generate হবে, user DB-এ এখনো save হবে না
   const { email } = req.body;
-  const result = await authServices.register(req.body);
+  const result = await register(email);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: `OTP sent to ${email}. Please verify to complete registration`,
-    data: { email }, // শুধু email পাঠাচ্ছি
+    message: `OTP sent to ${email}. Please verify to complete `,
+    data:result 
   });
 });
 
