@@ -34,17 +34,6 @@ export const googleLogin = async (req: Request, res: Response) => {
     console.log('Google payload:', payload);
     if (!payload?.email) return res.status(400).json({ success: false, message: 'Invalid Google token' });
 
-    // let user = await User.findOne({ email: payload.email });
-    // if (!user) {
-    //   user = await User.create({
-    //     email: payload.email,
-    //     fullName: payload.name,
-    //     isVerified: true,
-    //     accountType: 'google',
-    //   });
-    // }
-
-
     let user = await User.findOne({ email: payload.email });
 if (!user) {
   user = await User.create({
@@ -117,72 +106,6 @@ const verifyEmailController = catchAsync(async (req: Request, res: Response) => 
 });
 
 
-
-
-// npm install apple-auth jsonwebtoken
-
-// export const appleLogin = async (req: Request, res: Response) => {
-//   const { idToken } = req.body;
-
-//   if (!idToken) {
-//     throw new AppError(400, 'Apple idToken required');
-//   }
-
-//   jwt.verify(idToken, getAppleKey, async (err, decoded: any) => {
-//     if (err) {
-//       throw new AppError(401, 'Invalid Apple token');
-//     }
-
-//     const { email, sub } = decoded;
-
-//     let user = await User.findOne({ email });
-
-//     if (!user) {
-//       user = await User.create({
-//         email,
-//         fullName: 'Apple User',
-//         accountType: 'apple',
-//         isVerified: true,
-//         password: 'apple-login', // dummy password
-//         gender: 'Male',          // required field
-//         countryCode: 'NA',
-//         phoneNumber: sub,        // unique value
-//       });
-//     }
-
-//     const accessToken = jwt.sign(
-//       { id: user._id, role: user.role },
-//       process.env.JWT_ACCESS_SECRET!,
-//       { expiresIn: '24h' }
-//     );
-
-//     const refreshToken = jwt.sign(
-//       { id: user._id, role: user.role },
-//       process.env.JWT_REFRESH_SECRET!,
-//       { expiresIn: '7d' }
-//     );
-
-//     res.json({
-//       success: true,
-//       user,
-//       accessToken,
-//       refreshToken,
-//     });
-//   });
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
 const login = catchAsync(async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email }).select('+password');
@@ -225,6 +148,8 @@ const login = catchAsync(async (req: Request, res: Response) => {
     },
   });
 });
+
+
 
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const token = req.headers.token as string;
@@ -322,109 +247,6 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
     );
   }
 });
-
-// const googleLogin = catchAsync(async (req: Request, res: Response) => {
-//   const { idToken } = req.body;
-//   if (!idToken) {
-//     throw new AppError(httpStatus.BAD_REQUEST, 'Google idToken is required');
-//   }
-//   const ticket = await googleClient.verifyIdToken({
-//     idToken,
-//     audience: '23601987612-4e3n9lf08s8hnh0o9m8ag8n22f82u2ki.apps.googleusercontent.com', // Google Client ID
-//   });
-//   const payload = ticket.getPayload();
-//   if (!payload?.email) {
-//     throw new AppError(httpStatus.BAD_REQUEST, 'Invalid Google token');
-//   }
-
-//   let user = await User.findOne({ email: payload.email });
-//   if (!user) {
-//     user = await User.create({
-//       email: payload.email,
-//       fullName: payload.name,
-//       isVerified: true,
-//     });
-//   }
-
-//   const accessToken = jwt.sign(
-//     { id: user._id, role: user.role },
-//     config.jwt.jwt_access_secret as Secret,
-//     { expiresIn: '24h' },
-//   );
-//   const refreshToken = jwt.sign(
-//     { id: user._id, role: user.role },
-//     config.jwt.jwt_refresh_secret as Secret,
-//     { expiresIn: '7d' },
-//   );
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: 'Google login successful',
-//     data: {
-//       user,
-//       accessToken,
-//       refreshToken,
-//     },
-//   });
-// });
-
-// const facebookLogin = catchAsync(async (req: Request, res: Response) => {
-//   const { accessToken } = req.body;
-//   if (!accessToken) {
-//     throw new AppError(
-//       httpStatus.BAD_REQUEST,
-//       'Facebook accessToken is required',
-//     );
-//   }
-
-//   // Verify token and get user info from Facebook
-//   const fbRes = await axios.get(
-//     `https://graph.facebook.com/me?fields=id,name,email&access_token=${accessToken}`,
-//   );
-
-//   console.log('FB DATA:', fbRes.data);
-
-//   const { email, name } = fbRes.data;
-//   if (!email) {
-//     throw new AppError(
-//       httpStatus.BAD_REQUEST,
-//       'Unable to get email from Facebook',
-//     );
-//   }
-
-//   let user = await User.findOne({ email });
-//   if (!user) {
-//     user = await User.create({
-//       email,
-//       fullName: name,
-//       isVerified: true,
-//     });
-//   }
-
-//   const accessTokenJwt = jwt.sign(
-//     { id: user._id, role: user.role },
-//     config.jwt.jwt_access_secret as Secret,
-//     { expiresIn: '24h' },
-//   );
-//   const refreshToken = jwt.sign(
-//     { id: user._id, role: user.role },
-//     config.jwt.jwt_refresh_secret as Secret,
-//     { expiresIn: '7d' },
-//   );
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: 'Facebook login successful',
-//     data: {
-//       user,
-//       accessToken: accessTokenJwt,
-//       refreshToken,
-//     },
-//   });
-// });
-
 
 
 

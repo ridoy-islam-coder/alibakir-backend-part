@@ -16,8 +16,44 @@ import { UserRole } from '../user/user.interface';
 // otpCache: in-memory Map or Redis
 const otpCache = new Map<string, { payload: TRegister; otp: number; expiresAt: Date }>();
 
+// const register = async (payload: TRegister) => {
+//   // check existing email
+//   const isEmailExist = await User.isUserExist(payload.email);
+//   if (isEmailExist) {
+//     throw new AppError(httpStatus.BAD_REQUEST, 'Email already exists');
+//   }
+
+//   // phone check
+//   const isPhoneExist = await User.isUserExistByNumber(
+//     payload.countryCode,
+//     payload.phoneNumber
+//   );
+//   if (isPhoneExist) {
+//     throw new AppError(httpStatus.BAD_REQUEST, 'Phone number already exists');
+//   }
+
+//   // generate OTP
+//   const otp = generateOtp();
+//   const expiresAt = moment().add(5, 'minute').toDate();
+
+//   otpCache.set(payload.email, { payload, otp, expiresAt });
+
+//   // send OTP email
+//   await sendEmail(
+//     payload.email,
+//     'Verify your email',
+//     `<div>
+//       <h4>Your verification OTP</h4>
+//       <h2>${otp}</h2>
+//       <p>Valid till: ${expiresAt.toLocaleString()}</p>
+//     </div>`
+//   );
+
+//   return { email: payload.email };
+// };
+
 const register = async (payload: TRegister) => {
-  // check existing email
+  // email check
   const isEmailExist = await User.isUserExist(payload.email);
   if (isEmailExist) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Email already exists');
@@ -36,9 +72,18 @@ const register = async (payload: TRegister) => {
   const otp = generateOtp();
   const expiresAt = moment().add(5, 'minute').toDate();
 
-  otpCache.set(payload.email, { payload, otp, expiresAt });
+  // 👉 create user with verification
+  const user = await User.create({
+    ...payload,
+    isVerified: false,
+    verification: {
+      otp,
+      expiresAt,
+      status: false,
+    },
+  });
 
-  // send OTP email
+  // send email
   await sendEmail(
     payload.email,
     'Verify your email',
@@ -49,8 +94,19 @@ const register = async (payload: TRegister) => {
     </div>`
   );
 
-  return { email: payload.email };
+  return {
+    message: 'Registration successful. Please verify your email.',
+    userId: user._id,
+  };
 };
+
+
+
+
+
+
+
+
 
 
 
