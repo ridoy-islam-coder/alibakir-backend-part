@@ -580,14 +580,16 @@ export const setPasswordController = catchAsync(
     if (newPassword !== confirmPassword) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Passwords do not match');
     }
+   
 
-    await authServices.SetPasswordService(email, newPassword);
+    const result = await authServices.SetPasswordService(email, newPassword);
+   
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
       message: 'Password reset successful',
-      data: {},
+       data: result,
     });
   },
 );

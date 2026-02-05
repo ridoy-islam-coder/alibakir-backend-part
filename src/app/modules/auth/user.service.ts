@@ -40,7 +40,7 @@ export const register = async (email: string) => {
     user = await User.create({
       email,
       isVerified: false,
-      accountType: 'custom',
+      accountType: 'customer',
       verification: { otp, expiresAt, status: false },
     });
   }
@@ -531,9 +531,59 @@ export const userVerifyOtp = async (email: string, otpInput: number) => {
 
 
 
+// export const SetPasswordService = async (
+//   email: string,
+//   newPassword: string,
+// ) => {
+//   const user = await User.findOne({ email }).select('+password');
+
+//   if (!user) {
+//     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+//   }
+
+//   // OTP verify check
+//   if (!user.verification || user.verification.status !== true) {
+//     throw new AppError(httpStatus.BAD_REQUEST, 'OTP not verified');
+//   }
+
+// if (!newPassword || newPassword.trim() === '') {
+//   throw new AppError(httpStatus.BAD_REQUEST, 'Password cannot be empty');
+// }
+//   // ✅ Hash password
+//   // const hashedPassword = await bcrypt.hash(
+//   //   newPassword,
+//   //   Number(config.bcrypt_salt_rounds),
+//   // );
+//   user.password = newPassword.trim();
+
+//   // ✅ Clear OTP data
+//   // user.verification = {
+//   //   otp: null,
+//   //   expiresAt: null,
+//   //   status: false,
+//   // } as any;
+
+
+//   if (user.verification) {
+//   user.verification.otp = 0; // বা যেটা দিয়ে valid মনে হবে
+//   user.verification.expiresAt = new Date(); // অথবা নতুন Date()
+//   user.verification.status = false;
+// } else {
+//   user.verification = {
+//     otp: 0,
+//     expiresAt: new Date(),
+//     status: false,
+//   };
+// }
+// await user.save();
+
+//   await user.save();
+
+//   return null;
+// };
 export const SetPasswordService = async (
   email: string,
-  newPassword: string,
+  newPassword: string
 ) => {
   const user = await User.findOne({ email }).select('+password');
 
@@ -541,30 +591,36 @@ export const SetPasswordService = async (
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  // OTP verify check
+  // OTP must be verified
   if (!user.verification || user.verification.status !== true) {
     throw new AppError(httpStatus.BAD_REQUEST, 'OTP not verified');
   }
 
-  // ✅ Hash password
-  // const hashedPassword = await bcrypt.hash(
-  //   newPassword,
-  //   Number(config.bcrypt_salt_rounds),
-  // );
-  user.password = newPassword;
+  // Validate password
+  if (!newPassword || newPassword.trim() === '') {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Password cannot be empty');
+  }
 
-  // ✅ Clear OTP data
-  user.verification = {
-    otp: null,
-    expiresAt: null,
-    status: false,
-  } as any;
+  // Hash password (optional but recommended)
+  // const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
+  // user.password = hashedPassword;
+  user.password = newPassword.trim();
 
+  // Clear OTP data safely
+  user.verification.otp = 0; // mark OTP as cleared
+  user.verification.expiresAt = new Date(); // or any valid Date
+  user.verification.status = false;
+
+  // Save user
   await user.save();
 
-  return null;
-};
+  // return null;
 
+  return {
+  email: user.email,
+  isVerified: user.verification?.status,
+};
+};
 
 
 
@@ -602,13 +658,22 @@ export const userResetPasswordService = async (
   user.password = newPassword;
 
   // ✅ clear OTP data
- user.verification = {
-  otp: null,
-  expiresAt: null,
-  status: false,
-} as any;
+//  user.verification = {
+//   otp: 0,
+//   expiresAt: null,
+//   status: false,
+// } as any;
 
-  await user.save();
+if (!user.verification) {
+  user.verification = {} as any;
+}
+user.verification.otp = 0;
+user.verification.expiresAt =  new Date(0);
+user.verification.status = false;
+
+await user.save();
+
+ 
 
   return null;
 };

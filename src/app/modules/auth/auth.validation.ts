@@ -212,26 +212,33 @@ export const deleteAccountZodSchema = z.object({
 
 
 
-export const setPasswordValidationSchema = z.object({
-  body: z.object({
-    email: z
-      .string()
-      .nonempty('Email is required')
-      .email('Must be a valid email'),
+export const setPasswordValidationSchema = z
+  .object({
+    body: z.object({
+      email: z
+        .string()
+        .nonempty('Email is required')
+        .email('Must be a valid email'),
 
-    newPassword: z
-      .string()
-      .nonempty('New password is required')
-      .min(6, 'Password must be at least 6 characters'),
+      newPassword: z
+        .string()
+        .nonempty('New password is required')
+        .min(6, 'Password must be at least 6 characters')
+        .max(12, 'Password must not exceed 12 characters')
+        .regex(
+          /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/,
+          'Password must contain at least 1 letter and 1 number',
+        ),
 
-    confirmPassword: z
-      .string()
-      .nonempty('Confirm password is required'),
-  }),
-}).refine((data) => data.body.newPassword === data.body.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['body.confirmPassword'],
-});
+      confirmPassword: z
+        .string()
+        .nonempty('Confirm password is required'),
+    }),
+  })
+  .refine((data) => data.body.newPassword === data.body.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['body.confirmPassword'],
+  });
 
 
 
