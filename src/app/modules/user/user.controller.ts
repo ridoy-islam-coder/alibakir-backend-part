@@ -150,11 +150,23 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
     delete updateData.gender;
   }
 
+    // Remove forbidden fields
+  const forbiddenFields = ['role', 'isVerified']; // phoneNumber allowed now
+  for (const key of forbiddenFields) delete updateData[key];
+
+  // Optional: remove gender if missing
+  if (!req.body.gender) delete updateData.gender;
+
+
   // Update profile
   const result = await userServices.updateProfile(
     userIdToUpdate,
     updateData,
   );
+
+
+
+
 
   // (Optional) Save notification ONLY (no socket)
   // await saveNotification({

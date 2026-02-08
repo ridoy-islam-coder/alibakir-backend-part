@@ -33,7 +33,7 @@ const updateProfile = async (id: string, payload: Partial<TUser>) => {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  const restrictedFields = ['phoneNumber', 'role', 'email'];
+  const restrictedFields = [ 'role', 'email'];
   restrictedFields.forEach((field) => {
     if (field in payload) {
       throw new AppError(
