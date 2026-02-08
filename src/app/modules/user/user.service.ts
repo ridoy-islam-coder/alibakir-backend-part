@@ -21,6 +21,8 @@ const getme = async (id: string) => {
     fullName: result.fullName,
     countryCode: result.countryCode,
     phoneNumber: result.phoneNumber,
+    website: result.website,
+    category: result.category,
     image: result.image ?? {},
   };
 };

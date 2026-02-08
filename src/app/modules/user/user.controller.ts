@@ -27,95 +27,6 @@ const updatePhoneNumber = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// const updateProfile = catchAsync(async (req: Request, res: Response) => {
-//   let image;
-
-//   // Upload image if provided
-//   if (req.file) {
-//     image = await uploadToS3(req.file, 'profile/');
-//   }
-
-//   // Determine which user's profile is being updated
-//   const isAdmin = req.user.role === 'admin' || req.user.role === 'sup_admin';
-//   const userIdToUpdate = isAdmin && req.params.id ? req.params.id : req.user.id;
-
-//   // 🔍 DEBUG: Log all relevant IDs
-//   console.log('🔍 DEBUG - Profile Update:');
-//   console.log('  - req.user.id:', req.user.id, typeof req.user.id);
-//   console.log('  - req.params.id:', req.params.id, typeof req.params.id);
-//   console.log('  - userIdToUpdate:', userIdToUpdate, typeof userIdToUpdate);
-//   console.log('  - isAdmin:', isAdmin);
-
-//   // If admin is updating their own profile, make gender optional
-//   const isAdminUpdatingSelf = isAdmin && userIdToUpdate === req.user.id;
-
-//   // Build update data
-//   const updateData: Record<string, any> = {
-//     ...req.body,
-//     ...(image && { image }),
-//   };
-
-//   // Remove gender if admin is updating their own profile and gender is missing
-//   if (isAdminUpdatingSelf && !req.body.gender) {
-//     delete updateData.gender;
-//   }
-
-//   // Call the service to update
-//   const result = await userServices.updateProfile(userIdToUpdate, updateData);
-
-//   // ===== SOCKET.IO ROOM & SOCKET DEBUG LOGS =====
-//   console.log('🔍 DEBUG - Socket Rooms:');
-//   console.log('  - All rooms:', Array.from(io.sockets.adapter.rooms.keys()));
-
-//   const roomExists = io.sockets.adapter.rooms.has(userIdToUpdate.toString());
-//   console.log(
-//     `  - Room for userIdToUpdate (${userIdToUpdate}) exists:`,
-//     roomExists,
-//   );
-
-//   if (roomExists) {
-//     const roomSockets = io.sockets.adapter.rooms.get(userIdToUpdate.toString());
-//     console.log(
-//       `  - Room ${userIdToUpdate} sockets count:`,
-//       roomSockets?.size,
-//       'Socket IDs:',
-//       roomSockets ? Array.from(roomSockets) : [],
-//     );
-//   } else {
-//     console.log(`❌ Room not found for userId: ${userIdToUpdate}`);
-//   }
-
-//   // ===== SAVE NOTIFICATION + EMIT REALTIME =====
-//   try {
-//     await saveNotification({
-//       userId: userIdToUpdate.toString(),
-//       title: 'Profile Updated',
-//       userType: 'User',
-
-//       message: 'Your profile has been updated successfully.',
-//       type: 'profile',
-//     });
-//     console.log(`📤 Notification saved & emitted to room: ${userIdToUpdate}`);
-//   } catch (error) {
-//     console.error('❌ Error saving/emitting notification:', error);
-//   }
-
-//   // Respond with updated user info and context
-//   sendResponse(res, {
-//     statusCode: 200,
-//     success: true,
-//     message: 'Profile updated successfully',
-//     data: {
-//       updatedUser: result,
-//       updatedBy: {
-//         id: req.user.id,
-//         role: req.user.role,
-//         actingOn: userIdToUpdate,
-//       },
-//     },
-//   });
-// });
-
 
 
 
@@ -155,7 +66,7 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
   for (const key of forbiddenFields) delete updateData[key];
 
   // Optional: remove gender if missing
-  if (!req.body.gender) delete updateData.gender;
+  // if (!req.body.gender) delete updateData.gender;
 
 
   // Update profile

@@ -23,4 +23,12 @@ router.post('/userVerifyOtp', authControllers.verifyOtpController,);
 
 router.patch('/change-password',auth(USER_ROLE.sup_admin, USER_ROLE.user),authControllers.changePassword,);
 router.patch('/reset-password', authControllers.resetPassword);
+
+
+
+//forget password এর জন্য OTP পাঠানোর route
+router.post('/send-otp',validateRequest(authValidation.requestOtpZodSchema), authControllers.sendOtp,);
+
+
+
 export const authRoutes = router;

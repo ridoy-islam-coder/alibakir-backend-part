@@ -9,7 +9,7 @@ import jwt, { JwtPayload, Secret  } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import config from '../../config';
 import sendResponse from '../../utils/sendResponse';
-import { authServices, register, userResetPasswordService, } from './user.service';
+import { authServices, Enteryouremail, register, userResetPasswordService, } from './user.service';
 import { UserRole } from '../user/user.interface';
 // import { AuthServices } from './user.service';
 import * as appleSignin from 'apple-signin-auth';
@@ -594,8 +594,33 @@ export const setPasswordController = catchAsync(
   },
 );
 
+
+
+
+
+
+
+
+
+// forgot password এর জন্য OTP verify করার পরে password set করার জন্য এই controller টা ব্যবহার করব।
+
+
+
+export const sendOtp = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw new AppError(400, 'Email is required');
+
+  await Enteryouremail(email);
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP sent successfully to your email',
+  });
+});
+
 export const authControllers = {
   login,
+  sendOtp,
   resetPassword,
   verifyOtpController,
   codeVerification,

@@ -1,7 +1,7 @@
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
 import config from "../../config";
 import AppError from "../../error/AppError";
-import User from "../user/user.model";
+
 import { createToken, verifyToken } from "./auth.utils";
 import { TchangePassword, Tlogin, TRegister, TresetPassword, VerifyOtpPayload } from "./user.interface";
 import  httpStatus  from 'http-status';
@@ -10,6 +10,7 @@ import moment from 'moment';
 import { sendEmail } from '../../utils/mailSender';
 import bcrypt from "bcrypt";
 import { UserRole } from '../user/user.interface';
+import User from '../user/user.model';
 
 
 
@@ -440,15 +441,6 @@ export const sendVerificationCode = async (email: string) => {
 
   passwordResetOtpCache.set(email, { otp, expiresAt });
 
-  // await sendEmail(
-  //   email,
-  //   'Password Reset OTP',
-  //   `<div>
-  //     <h4>Your password reset OTP</h4>
-  //     <h2>${otp}</h2>
-  //     <p>Valid till: ${expiresAt.toLocaleString()}</p>
-  //   </div>`
-  // );
 
   await sendEmail(
   email,
@@ -678,6 +670,82 @@ await user.save();
   return null;
 };
 
+//forgot password এর জন্য OTP verify করার পরে password set করার জন্য এই service টা ব্যবহার করব।
+
+
+export const Enteryouremail = async (email: string) => {
+  const user = await User.findOne({
+    email,
+    isDeleted: false,
+    isVerified: true,
+    isActive: true,
+  });
+
+  if (!user) throw new AppError(404, 'Email not found or not verified');
+
+  const otp = generateOtp();
+  const expiresAt = moment().add(10, 'minutes').toDate();
+
+  passwordResetOtpCache.set(email, { otp, expiresAt });
+
+  try {
+ 
+  await sendEmail(
+  email,
+  'Password Reset OTP',
+  `
+  <div style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+    <!-- Email Container -->
+    <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; padding: 30px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+
+      <!-- Logo -->
+      <img src="https://yourdomain.com/logo.png" alt="Your Logo" style="width: 120px; margin-bottom: 20px;" />
+
+      <!-- Heading -->
+      <h2 style="color: #333;">Password Reset OTP</h2>
+      <p style="color: #555; font-size: 16px;">Use the OTP below to reset your password. It is valid for 10 minutes.</p>
+
+      <!-- OTP Box with animation -->
+      <div style="
+        display: inline-block;
+        padding: 15px 25px;
+        font-size: 32px;
+        letter-spacing: 8px;
+        color: #fff;
+        background: #4CAF50;
+        border-radius: 8px;
+        font-weight: bold;
+        margin: 20px 0;
+        animation: pulse 1.5s infinite;
+      ">
+        ${otp}
+      </div>
+
+      <!-- Expiry info -->
+      <p style="color: #888; font-size: 14px;">Valid till: ${expiresAt.toLocaleString()}</p>
+
+      <!-- Footer -->
+      <p style="color: #aaa; font-size: 12px; margin-top: 30px;">If you did not request this, please ignore this email.</p>
+    </div>
+  </div>
+
+  <!-- Animation keyframes -->
+  <style>
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 5px #4CAF50; }
+      50% { transform: scale(1.05); box-shadow: 0 0 15px #4CAF50; }
+      100% { transform: scale(1); box-shadow: 0 0 5px #4CAF50; }
+    }
+  </style>
+  `
+);
+  } catch (err) {
+    throw new AppError(500, 'Failed to send OTP email');
+  }
+
+  return { message: 'OTP sent successfully to your email' };
+};
+
 
 
 
@@ -688,6 +756,7 @@ export const authServices = {
   register,
   verifyEmail,
   login,
+  Enteryouremail,
   SetPasswordService,
   userVerifyOtp,
   sendVerificationCode,

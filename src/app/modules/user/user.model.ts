@@ -5,6 +5,7 @@ import config from '../../config';
 
 import { Types } from 'mongoose';
 import { TUser, UserModel, UserRole } from './user.interface';
+import { de } from 'zod/v4/locales';
 
 // Define the schema for Verification
 const VerificationSchema = new Schema({
@@ -91,13 +92,21 @@ const UserSchema = new Schema<TUser, UserModel>(
       required: true,
       default: UserRole.customer, // ✅ Fix: Add default
     },
-    gender: {
+     website: {
       type: String,
-      enum: ['Male', 'Female'],
-         required: function(this: TUser) {
-        return this.isVerified === true;
-       }, 
+      default: '',// ✅ Fix: Add default
     },
+      categore: {
+      type: String,
+      default: '',
+    },
+    // gender: {
+    //   type: String,
+    //   enum: ['Male', 'Female'],
+    //      required: function(this: TUser) {
+    //     return this.isVerified === true;
+    //    }, 
+    // },
     subscription: {
       plan: {
         type: Schema.Types.ObjectId,
