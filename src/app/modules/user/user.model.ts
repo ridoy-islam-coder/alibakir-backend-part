@@ -57,21 +57,21 @@ const UserSchema = new Schema<TUser, UserModel>(
       default: '',
       select: false,
     },
-    // countryCode: {
-    //   type: String,
-    //   required: function(this: TUser) { return this.isVerified === true; },
-    //   sparse: true, // 🔥 important
+    countryCode: {
+      type: String,
+      // required: function(this: TUser) { return this.isVerified === true; },
+      sparse: true, // 🔥 important
       
-    // },
+    },
 
-    // phoneNumber: {
-    //   type: String,
-    //   // required: true,
-    //   required: function(this: TUser) { return this.isVerified === true; },
-    //   sparse: true, // ⚡ social login এর জন্য
-    //   unique: true,
+    phoneNumber: {
+      type: String,
+      // required: true,
+      // required: function(this: TUser) { return this.isVerified === true; },
+      sparse: true, // ⚡ social login এর জন্য
+      unique: true,
     
-    // },
+    },
     needsPasswordChange: {
       type: Boolean,
       default: false,

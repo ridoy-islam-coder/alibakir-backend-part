@@ -4,6 +4,7 @@ import { USER_ROLE } from "./user.constant";
 import { userControllers } from "./user.controller";
 import validateRequest from "../../middleware/validateRequest";
 import { authValidation } from "../auth/auth.validation";
+import upload from "../../middleware/fileUpload";
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const router = Router();
 router.patch(
   '/update-profile',
   auth(USER_ROLE.sup_admin, USER_ROLE.user),
-//   upload.single('file'),
+  upload.single('image'),
   userControllers.updateProfile,
 );
 // //toatal user count
