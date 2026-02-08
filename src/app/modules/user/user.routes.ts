@@ -54,11 +54,11 @@ router.patch(
   auth(USER_ROLE.user),
   userControllers.updatePhoneNumber,
 );
-router.get(
-  '/profile',
-  auth(USER_ROLE.admin, USER_ROLE.user),
-  userControllers.getme,
-);
+// router.get(
+//   '/profile',
+//   auth(USER_ROLE.admin, USER_ROLE.user),
+//   userControllers.getme,
+// );
 // Block user
 router.patch(
   '/block/:id',
@@ -80,7 +80,7 @@ router.get(
 );
 router.get(
   '/',
-  auth(USER_ROLE.vendor, USER_ROLE.admin),
+  auth(USER_ROLE.sup_admin, USER_ROLE.user),
   userControllers.getAllUsers,
 );
 
