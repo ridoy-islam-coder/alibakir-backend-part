@@ -3,6 +3,7 @@ import catchAsync from "../../utils/catchAsync";
 import { userServices } from "./user.service";
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from 'http-status';
+import { uploadToS3 } from "../../utils/fileHelper";
 
 // Get current user's profile
 const getme = catchAsync(async (req: Request, res: Response) => {
@@ -115,6 +116,65 @@ const updatePhoneNumber = catchAsync(async (req: Request, res: Response) => {
 //   });
 // });
 
+
+
+
+
+const updateProfile = catchAsync(async (req: Request, res: Response) => {
+  let image;
+
+  // Upload image if provided
+  if (req.file) {
+    image = await uploadToS3(req.file, 'profile/');
+  }
+
+  // Check role
+  const isAdmin = req.user.role === 'admin' || req.user.role === 'sup_admin';
+
+  // User can update own profile, admin can update others
+  const userIdToUpdate =
+    isAdmin && req.params.id ? req.params.id : req.user.id;
+
+  // Admin updating own profile
+  const isAdminUpdatingSelf =
+    isAdmin && userIdToUpdate.toString() === req.user.id.toString();
+
+  // Build update data
+  const updateData: Record<string, any> = {
+    ...req.body,
+    ...(image && { image }),
+  };
+
+  // Make gender optional if admin updates own profile
+  if (isAdminUpdatingSelf && !req.body.gender) {
+    delete updateData.gender;
+  }
+
+  // Update profile
+  const result = await userServices.updateProfile(
+    userIdToUpdate,
+    updateData,
+  );
+
+  // (Optional) Save notification ONLY (no socket)
+  // await saveNotification({
+  //   userId: userIdToUpdate.toString(),
+  //   title: 'Profile Updated',
+  //   userType: 'User',
+  //   message: 'Your profile has been updated successfully.',
+  //   type: 'profile',
+  // });
+
+  // Response
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Profile updated successfully',
+    data: result,
+  });
+});
+
+
 // Get single user (used by admin)
 const getsingleUser = catchAsync(async (req: Request, res: Response) => {
   const result = await userServices.getSingleUser(req.params.id as string);
@@ -210,7 +270,7 @@ const unblockUser = catchAsync(async (req: Request, res: Response) => {
 
 export const userControllers = {
   getme,
-//   updateProfile,
+  updateProfile,
   getsingleUser,
   getAllUsers,
   deleteAccount,

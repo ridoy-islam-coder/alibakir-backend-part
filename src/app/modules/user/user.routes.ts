@@ -8,12 +8,12 @@ import { authValidation } from "../auth/auth.validation";
 const router = Router();
 
 // For login user (user & admin both)
-// router.patch(
-//   '/update-profile',
-//   auth(USER_ROLE.user, USER_ROLE.admin, USER_ROLE.sup_admin),
-// //   upload.single('file'),
-//   userControllers.updateProfile,
-// );
+router.patch(
+  '/update-profile',
+  auth(USER_ROLE.sup_admin, USER_ROLE.user),
+//   upload.single('file'),
+  userControllers.updateProfile,
+);
 // //toatal user count
 router.get(
   '/total-count',
