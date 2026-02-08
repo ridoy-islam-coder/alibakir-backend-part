@@ -672,8 +672,7 @@ await user.save();
 
 //forgot password এর জন্য OTP verify করার পরে password set করার জন্য এই service টা ব্যবহার করব।
 
-
-export const Enteryouremail = async (email: string) => {
+const Enteryouremail = async (email: string) => {
   const user = await User.findOne({
     email,
     isDeleted: false,
@@ -748,7 +747,21 @@ export const Enteryouremail = async (email: string) => {
 
 
 
+const verifyOtp = (email: string, inputOtp: number) => {
+  const record = passwordResetOtpCache.get(email);
+  if (!record) throw new AppError(400, 'No OTP found for this email');
 
+  if (record.expiresAt < new Date()) {
+    passwordResetOtpCache.delete(email);
+    throw new AppError(400, 'OTP expired');
+  }
+
+  if (record.otp !== inputOtp) throw new AppError(400, 'Invalid OTP');
+
+  // OTP verified → remove from cache
+  passwordResetOtpCache.delete(email);
+  return true;
+};
 
 
 
@@ -757,6 +770,7 @@ export const authServices = {
   verifyEmail,
   login,
   Enteryouremail,
+  verifyOtp,
   SetPasswordService,
   userVerifyOtp,
   sendVerificationCode,

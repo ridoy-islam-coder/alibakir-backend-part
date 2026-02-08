@@ -28,6 +28,7 @@ router.patch('/reset-password', authControllers.resetPassword);
 
 //forget password এর জন্য OTP পাঠানোর route
 router.post('/send-otp',validateRequest(authValidation.requestOtpZodSchema), authControllers.sendOtp,);
+router.post('/verify-otp',validateRequest(authValidation.verifyEmailZodSchemar), authControllers.verifyOtpOnly,);
 
 
 

@@ -9,7 +9,7 @@ import jwt, { JwtPayload, Secret  } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import config from '../../config';
 import sendResponse from '../../utils/sendResponse';
-import { authServices, Enteryouremail, register, userResetPasswordService, } from './user.service';
+import { authServices,  register, userResetPasswordService, } from './user.service';
 import { UserRole } from '../user/user.interface';
 // import { AuthServices } from './user.service';
 import * as appleSignin from 'apple-signin-auth';
@@ -606,11 +606,11 @@ export const setPasswordController = catchAsync(
 
 
 
-export const sendOtp = catchAsync(async (req, res) => {
+ const sendOtp = catchAsync(async (req, res) => {
   const { email } = req.body;
   if (!email) throw new AppError(400, 'Email is required');
 
-  await Enteryouremail(email);
+  await authServices.Enteryouremail(email);
 
   res.status(200).json({
     success: true,
@@ -618,9 +618,53 @@ export const sendOtp = catchAsync(async (req, res) => {
   });
 });
 
+
+
+
+
+ const verifyOtpOnly = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) throw new AppError(400, 'Email and OTP are required');
+
+  // Verify OTP
+  await authServices.verifyOtp(email, Number(otp));
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP verified successfully',
+  });
+});
+
+
+
+
+const verifyOtpAndResetPassword = catchAsync(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  if (!email || !otp || !newPassword)
+    throw new AppError(400, 'Email, OTP and newPassword are required');
+
+  // Verify OTP
+  verifyOtp(email, Number(otp));
+
+  // Update password in DB
+  const user = await User.findOne({ email, isDeleted: false, isVerified: true });
+  if (!user) throw new AppError(404, 'User not found');
+
+  const saltRounds = Number(config.bcrypt_salt_rounds);
+  user.password = await bcrypt.hash(newPassword, saltRounds);
+  user.needsPasswordChange = false; // optional
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Password reset successfully',
+  });
+});
+
 export const authControllers = {
   login,
   sendOtp,
+  verifyOtpOnly,
   resetPassword,
   verifyOtpController,
   codeVerification,
