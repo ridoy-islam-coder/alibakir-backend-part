@@ -643,9 +643,8 @@ const verifyOtpAndResetPassword = catchAsync(async (req, res) => {
   if (!email || !otp || !newPassword)
     throw new AppError(400, 'Email, OTP and newPassword are required');
 
-  // Verify OTP
-  verifyOtp(email, Number(otp));
-
+// Verify OTP
+  await authServices.verifyOtp(email, Number(otp));
   // Update password in DB
   const user = await User.findOne({ email, isDeleted: false, isVerified: true });
   if (!user) throw new AppError(404, 'User not found');
@@ -672,6 +671,7 @@ export const authControllers = {
   refreshToken,
   linkedInLogin,
   googleLogin,
+  verifyOtpAndResetPassword,
   facebookLogin,
   setPasswordController,
   userRegistration,
