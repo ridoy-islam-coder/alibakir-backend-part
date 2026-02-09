@@ -20,6 +20,38 @@ import { ApplePayload } from './user.interface';
 // const googleClient = new OAuth2Client('23601987612-4e3n9lf08s8hnh0o9m8ag8n22f82u2ki.apps.googleusercontent.com'); // Replace with your Google Client ID
 const googleClient = new OAuth2Client('23601987612-ko94q8ki1ui42igekam6f87kamceuvu4.apps.googleusercontent.com');
 
+ const createRoleOnlyController = catchAsync(
+  async (req: Request, res: Response) => {
+    const { role } = req.body;
+
+    if (!role) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Role is required');
+    }
+
+    const { user, isNew } = await authServices.createRoleOnlyService(role);
+
+    if (!isNew) {
+      return sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Role already exists',
+        data: user,
+      });
+    }
+
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: 'Role created successfully',
+      data: user,
+    });
+  },
+);
+
+
+
+
+
 export const googleLogin = async (req: Request, res: Response) => {
   const { idToken } = req.body;
   if (!idToken) return res.status(400).json({ success: false, message: 'idToken required' });
@@ -310,7 +342,7 @@ export const facebookLogin = catchAsync(
         fullName: name,
         accountType: 'facebook', // অবশ্যই দিতে হবে
         isVerified: true,
-        role: UserRole.customer,
+        // role: UserRole.customer,
       });
     }
 
@@ -378,7 +410,7 @@ const linkedInLogin = catchAsync(async (req: Request, res: Response) => {
         fullName: name,
         isVerified: true,
         accountType: "linkedin", // important
-        role: UserRole.customer,
+        // role: UserRole.customer,
       });
     }
 
@@ -450,7 +482,7 @@ export const appleLogin = catchAsync(async (req: Request, res: Response) => {
       fullName,
       accountType: 'apple',
       isVerified: true,
-      role: UserRole.customer,
+      // role: UserRole.customer,
     });
   }
 
@@ -672,7 +704,7 @@ export const authControllers = {
   refreshToken,
   linkedInLogin,
   googleLogin,
-  
+  createRoleOnlyController,
   facebookLogin,
   setPasswordController,
   userRegistration,

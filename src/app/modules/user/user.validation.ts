@@ -57,9 +57,9 @@ const createUserZodSchema = z.object({
     needsPasswordChange: z.boolean().optional(),
     passwordChangedAt: z.coerce.date().optional(),
     accountType: z
-      .enum(['custom', 'google', 'facebook', 'linkedin', 'apple'])
+      .enum(['emailvarifi', 'google', 'facebook', 'linkedin', 'apple'])
       .optional()
-      .default('custom'),
+      .default('emailvarifi'),
     isActive: z.boolean().optional().default(true),
     isVerified: z.boolean().optional().default(false),
     isDeleted: z.boolean().optional().default(false),
@@ -73,7 +73,7 @@ const createUserZodSchema = z.object({
   }),
 }).refine((data) => {
   // local signup হলে সব field required
-  if (data.body.accountType === 'custom') {
+  if (data.body.accountType === 'emailvarifi') {
     return (
       data.body.password &&
       data.body.phoneNumber &&

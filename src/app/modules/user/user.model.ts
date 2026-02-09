@@ -54,7 +54,7 @@ const UserSchema = new Schema<TUser, UserModel>(
       type: String,
       required: function(this: TUser) {
       return this.isVerified === true;
-   },
+       },
       default: '',
       select: false,
     },
@@ -82,15 +82,15 @@ const UserSchema = new Schema<TUser, UserModel>(
     },
     accountType: {
       type: String,
-      enum: ['customer', 'google', 'facebook', 'linkedin', 'apple'],
-      default: 'custom',
+      enum: ['emailvarifi', 'google', 'facebook', 'linkedin', 'apple'],
+      default: 'emailvarifi',
     },
  
     role: {
       type: String,
       enum: Object.values(UserRole),
       required: true,
-      // default: UserRole.customer,  ✅ Fix: Add default
+      default: UserRole.agencies,  // ✅ Fix: Add default
     },
      website: {
       type: String,

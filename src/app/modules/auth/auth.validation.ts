@@ -124,12 +124,12 @@ export const registerZodSchema = z.object({
     fullName: z.string().nonempty('Full name is required').optional(),
     phoneNumber: z.string().optional(),
     countryCode: z.string().optional(),
-    accountType: z.enum(['custom', 'google', 'facebook']).default('custom'),
+    accountType: z.enum(['emailvarifi', 'google', 'facebook']).default('emailvarifi'),
     gender: z.enum(['Male','Female']).optional(),
   }),
 }).refine((data) => {
   // Local signup হলে সব required
-  if (data.body.accountType === 'custom') {
+  if (data.body.accountType === 'emailvarifi') {
     return (
       !!data.body.password &&
       !!data.body.phoneNumber &&
