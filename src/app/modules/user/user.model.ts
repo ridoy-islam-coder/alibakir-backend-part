@@ -46,7 +46,7 @@ const UserSchema = new Schema<TUser, UserModel>(
     image: imageSchema,
     fullName: {
       type: String,
-    //    required: function(this: TUser) {
+      // required: function(this: TUser) {
     // return this.isVerified === true;
   // },
     },
@@ -89,7 +89,7 @@ const UserSchema = new Schema<TUser, UserModel>(
     role: {
       type: String,
       enum: Object.values(UserRole),
-      // required: true,
+      required: true,
       // default: UserRole.customer,  ✅ Fix: Add default
     },
      website: {
