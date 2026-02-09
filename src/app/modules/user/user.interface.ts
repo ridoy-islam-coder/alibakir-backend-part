@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Model } from 'mongoose';
 export enum UserRole {
-  super_admin = 'super_admin',
+  agencies = 'agencies',
   admin = 'admin',
-  user = 'user',
-  customer = 'customer',
+  influencer = 'influencer',
 }
 export enum status {
   pending = 'pending',

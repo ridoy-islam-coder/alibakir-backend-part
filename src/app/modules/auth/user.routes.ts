@@ -4,6 +4,7 @@ import validateRequest from "../../middleware/validateRequest";
 import { USER_ROLE } from "../user/user.constant";
 import { authValidation } from "./auth.validation"; 
 import { authControllers } from "./user.controller";
+import { authServices } from "./user.service";
 
 
 
@@ -21,7 +22,7 @@ router.post('/appleLogin', authControllers.appleLogin);
 router.post('/codeVerification', authControllers.codeVerification,);
 router.post('/userVerifyOtp', authControllers.verifyOtpController,);
 
-router.patch('/change-password',auth(USER_ROLE.sup_admin, USER_ROLE.user),authControllers.changePassword,);
+router.patch('/change-password',auth(USER_ROLE.agencies, USER_ROLE.influencer),authControllers.changePassword,);
 router.patch('/reset-password', authControllers.resetPassword);
 
 
@@ -29,7 +30,7 @@ router.patch('/reset-password', authControllers.resetPassword);
 //forget password এর জন্য OTP পাঠানোর route
 router.post('/send-otp',validateRequest(authValidation.requestOtpZodSchema), authControllers.sendOtp,);
 router.post('/verify-otp',validateRequest(authValidation.verifyEmailZodSchemar), authControllers.verifyOtpOnly,);
-router.patch('/forget-password', authControllers.verifyOtpAndResetPassword,);
+router.patch('/forget-password', authServices.verifyOtpAndResetPassword,);
 
 
 

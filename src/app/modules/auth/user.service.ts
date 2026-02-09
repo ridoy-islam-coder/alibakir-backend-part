@@ -11,6 +11,7 @@ import { sendEmail } from '../../utils/mailSender';
 import bcrypt from "bcrypt";
 import { UserRole } from '../user/user.interface';
 import User from '../user/user.model';
+import catchAsync from '../../utils/catchAsync';
 
 
 
@@ -759,11 +760,46 @@ const verifyOtp = (email: string, inputOtp: number) => {
   if (record.otp !== inputOtp) throw new AppError(400, 'Invalid OTP');
 
   // OTP verified → remove from cache
-  passwordResetOtpCache.delete(email);
+  // passwordResetOtpCache.delete(email);
   return true;
 };
 
+export const verifyOtpAndResetPassword = catchAsync(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
 
+  if (!email || !otp || !newPassword)
+    throw new AppError(400, 'Email, OTP and newPassword are required');
+
+  // Verify OTP from cache
+  const record = passwordResetOtpCache.get(email);
+  if (!record) throw new AppError(400, 'No OTP found for this email');
+
+  if (record.expiresAt < new Date()) {
+    passwordResetOtpCache.delete(email);
+    throw new AppError(400, 'OTP expired');
+  }
+
+  if (record.otp !== Number(otp)) {
+    throw new AppError(400, 'Invalid OTP');
+  }
+
+  // OTP verified → remove from cache
+  passwordResetOtpCache.delete(email);
+
+  // Update password in DB
+  const user = await User.findOne({ email, isDeleted: false, isVerified: true });
+  if (!user) throw new AppError(404, 'User not found');
+
+  const saltRounds = Number(config.bcrypt_salt_rounds) || 12;
+  user.password = await bcrypt.hash(newPassword, saltRounds);
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Password reset successfully',
+  });
+});
 
 export const authServices = {
   register,
@@ -771,6 +807,7 @@ export const authServices = {
   login,
   Enteryouremail,
   verifyOtp,
+  verifyOtpAndResetPassword,
   SetPasswordService,
   userVerifyOtp,
   sendVerificationCode,

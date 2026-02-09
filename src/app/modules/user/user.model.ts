@@ -89,8 +89,8 @@ const UserSchema = new Schema<TUser, UserModel>(
     role: {
       type: String,
       enum: Object.values(UserRole),
-      required: true,
-      default: UserRole.customer, // ✅ Fix: Add default
+      // required: true,
+      // default: UserRole.customer,  ✅ Fix: Add default
     },
      website: {
       type: String,
@@ -100,13 +100,7 @@ const UserSchema = new Schema<TUser, UserModel>(
       type: String,
       default: '',
     },
-    // gender: {
-    //   type: String,
-    //   enum: ['Male', 'Female'],
-    //      required: function(this: TUser) {
-    //     return this.isVerified === true;
-    //    }, 
-    // },
+   
     subscription: {
       plan: {
         type: Schema.Types.ObjectId,

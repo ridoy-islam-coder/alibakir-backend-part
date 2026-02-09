@@ -34,7 +34,7 @@ const auth = (...userRoles: string[]) => {
     const role = decoded.role;
 
     let isExist = null;
-    if (role === 'admin' || role === 'super_admin') {
+    if (role === 'admin' ||  role === 'agencies' || role === 'influencer') {
       isExist = await Admin.findById(id).select('+password');
     } else {
       isExist = await User.IsUserExistbyId(id);

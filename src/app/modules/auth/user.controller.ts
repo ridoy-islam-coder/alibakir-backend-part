@@ -638,27 +638,28 @@ export const setPasswordController = catchAsync(
 
 
 
-const verifyOtpAndResetPassword = catchAsync(async (req, res) => {
-  const { email, otp, newPassword } = req.body;
-  if (!email || !otp || !newPassword)
-    throw new AppError(400, 'Email, OTP and newPassword are required');
+// const verifyOtpAndResetPassword = catchAsync(async (req, res) => {
+//   const { email, otp, newPassword } = req.body;
+//   if (!email || !otp || !newPassword)
+//     throw new AppError(400, 'Email, OTP and newPassword are required');
 
-// Verify OTP
-  await authServices.verifyOtp(email, Number(otp));
-  // Update password in DB
-  const user = await User.findOne({ email, isDeleted: false, isVerified: true });
-  if (!user) throw new AppError(404, 'User not found');
+// // Verify OTP
+//   await authServices.verifyOtp(email, Number(otp));
+//   // Update password in DB
+//   const user = await User.findOne({ email, isDeleted: false, isVerified: true });
+//   if (!user) throw new AppError(404, 'User not found');
 
-  const saltRounds = Number(config.bcrypt_salt_rounds);
-  user.password = await bcrypt.hash(newPassword, saltRounds);
-  user.needsPasswordChange = false; // optional
-  await user.save();
+//   const saltRounds = Number(config.bcrypt_salt_rounds);
+//   user.password = await bcrypt.hash(newPassword, saltRounds);
+//   user.needsPasswordChange = false; // optional
 
-  res.status(200).json({
-    success: true,
-    message: 'Password reset successfully',
-  });
-});
+//   await user.save();
+
+//   res.status(200).json({
+//     success: true,
+//     message: 'Password reset successfully',
+//   });
+// });
 
 export const authControllers = {
   login,
@@ -671,7 +672,7 @@ export const authControllers = {
   refreshToken,
   linkedInLogin,
   googleLogin,
-  verifyOtpAndResetPassword,
+  
   facebookLogin,
   setPasswordController,
   userRegistration,

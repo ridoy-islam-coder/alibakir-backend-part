@@ -1,7 +1,7 @@
 export const USER_ROLE = {
+  agencies: 'agencies',
   admin: 'admin',
-  vendor: 'vendor',
-  sup_admin: 'super_admin',
-  user: 'customer',
+  influencer: 'influencer',
+  
 };
 export const UserStatus = ['pending', 'active', 'blocked'];

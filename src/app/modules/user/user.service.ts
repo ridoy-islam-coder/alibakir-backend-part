@@ -22,7 +22,7 @@ const getme = async (id: string) => {
     countryCode: result.countryCode,
     phoneNumber: result.phoneNumber,
     website: result.website,
-    category: result.category,
+    categore: result.categore,
     image: result.image ?? {},
   };
 };
