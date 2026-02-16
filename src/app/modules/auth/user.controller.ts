@@ -53,8 +53,10 @@ const googleClient = new OAuth2Client('23601987612-ko94q8ki1ui42igekam6f87kamceu
 
 
 export const googleLogin = async (req: Request, res: Response) => {
-  const { idToken } = req.body;
-  if (!idToken) return res.status(400).json({ success: false, message: 'idToken required' });
+  const { idToken, role } = req.body;
+
+   if (!idToken) return res.status(400).json({ success: false, message: 'idToken required' });
+   if (!role) return res.status(400).json({ success: false, message: 'Role required' });
 
   try {
     const ticket = await googleClient.verifyIdToken({
@@ -70,6 +72,7 @@ export const googleLogin = async (req: Request, res: Response) => {
 if (!user) {
   user = await User.create({
     email: payload.email,
+    role: role,   // Google login এর সময় role কে dynamic করার জন্য
     fullName: payload.name,
     isVerified: true,
     accountType: 'google',
@@ -444,10 +447,14 @@ const linkedInLogin = catchAsync(async (req: Request, res: Response) => {
 
 
 export const appleLogin = catchAsync(async (req: Request, res: Response) => {
-  const { identityToken } = req.body;
+  const { identityToken, role } = req.body;
 
   if (!identityToken) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Apple identity token is required');
+  }
+
+  if (!role) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Role is required');
   }
 
   // 🔹 Verify the Apple JWT
@@ -479,6 +486,7 @@ export const appleLogin = catchAsync(async (req: Request, res: Response) => {
 
     user = await User.create({
       email: finalEmail,
+      role: role, // Apple login এর সময় role কে dynamic করার জন্য
       fullName,
       accountType: 'apple',
       isVerified: true,
