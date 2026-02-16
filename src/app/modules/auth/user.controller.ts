@@ -76,13 +76,13 @@ if (!user) {
     fullName: payload.name,
     isVerified: true,
     accountType: 'google',
-    gender: 'Male',
-    password: '12231',
-    countryCode: '+880',
-    phoneNumber: '0172287587',
+    // gender: 'Male',
+    // password: '12231',
+    // countryCode: '+880',
+    // phoneNumber: '0172287587',
     image: {
       id: 'google', // যেকোনো default id
-      url: payload.picture || 'https://example.com/default.png',
+      url: payload.picture || 'https://i.ibb.co/z5YHLV9/profile.png',
     },
   });
 }
@@ -309,7 +309,7 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 
 export const facebookLogin = catchAsync(
   async (req: Request, res: Response) => {
-    const { accessToken } = req.body;
+    const { accessToken, role } = req.body;
 
     if (!accessToken) {
       throw new AppError(
@@ -317,6 +317,10 @@ export const facebookLogin = catchAsync(
         'Facebook accessToken is required',
       );
     }
+
+      if (!role) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Role is required');
+      }
 
     // 🔹 Get user info from Facebook
     const fbRes = await axios.get(
@@ -342,9 +346,14 @@ export const facebookLogin = catchAsync(
     if (!user) {
       user = await User.create({
         email: finalEmail,
+        role: role, // Facebook login এর সময় role কে dynamic করার জন্য
         fullName: name,
         accountType: 'facebook', // অবশ্যই দিতে হবে
         isVerified: true,
+         image: {
+         id: 'facebook', // যেকোনো default id
+         url: fbRes.data.picture?.data?.url || 'https://i.ibb.co/z5YHLV9/profile.png',
+        },
         // role: UserRole.customer,
       });
     }
@@ -379,10 +388,14 @@ export const facebookLogin = catchAsync(
 
 
 const linkedInLogin = catchAsync(async (req: Request, res: Response) => {
-  const { accessToken } = req.body;
+  const { accessToken, role } = req.body;
 
   if (!accessToken) {
     throw new AppError(httpStatus.BAD_REQUEST, "LinkedIn accessToken is required");
+  }
+
+  if (!role) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Role is required");
   }
 
   try {
@@ -413,7 +426,11 @@ const linkedInLogin = catchAsync(async (req: Request, res: Response) => {
         fullName: name,
         isVerified: true,
         accountType: "linkedin", // important
-        // role: UserRole.customer,
+        role: role,
+          image: {
+          id: "linkedin", // any default id
+          url: "https://i.ibb.co/z5YHLV9/profile.png", // LinkedIn থেকে profile picture পাওয়া একটু tricky, তাই default দিলাম
+        },
       });
     }
 
@@ -490,6 +507,10 @@ export const appleLogin = catchAsync(async (req: Request, res: Response) => {
       fullName,
       accountType: 'apple',
       isVerified: true,
+        image: {
+        id: 'apple', // any default id
+        url: 'https://i.ibb.co/z5YHLV9/profile.png',
+      },
       // role: UserRole.customer,
     });
   }
