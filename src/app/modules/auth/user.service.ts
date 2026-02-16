@@ -22,9 +22,17 @@ const otpCache = new Map<string, { payload: TRegister; otp: number; expiresAt: D
 
 
 
-export const register = async (email: string) => {
+export const register = async (email: string, role: UserRole) => {
 
    if (!email) throw new Error('Email is required');
+  //  if (!/\S+@\S+\.\S+/.test(email)) throw new Error('Invalid email format');
+  //  if (email.length > 255) throw new Error('Email is too long');
+  //  if (email.length < 5) throw new Error('Email is too short');
+  //  if (/\s/.test(email)) throw new Error('Email cannot contain spaces');
+  //  if (email.toLowerCase().endsWith('@example.com')) throw new Error('Example.com emails are not allowed');
+  //  if (email.toLowerCase().endsWith('@test.com')) throw new Error('Test.com emails are not allowed');
+  //  if (email.toLowerCase().endsWith('@invalid.com')) throw new Error('Invalid.com emails are not allowed');
+   if (!role) throw new Error('Role is required');
 
   const otp = Math.floor(100000 + Math.random() * 900000);
   const expiresAt = moment().add(20, 'minutes').toDate();
@@ -41,6 +49,7 @@ export const register = async (email: string) => {
   } else {
     user = await User.create({
       email,
+      role,
       isVerified: false,
       accountType: 'emailvarifi',
       verification: { otp, expiresAt, status: false },

@@ -73,8 +73,8 @@ if (!user) {
 
 
 const userRegistration = catchAsync(async (req: Request, res: Response) => {
-  const { email } = req.body;
-  const result = await register(email);
+  const { email,role } = req.body;
+  const result = await register(email, role);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
