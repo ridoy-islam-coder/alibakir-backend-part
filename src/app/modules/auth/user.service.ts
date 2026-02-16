@@ -617,23 +617,6 @@ export const SetPasswordService = async (
 
 
 
-export const createRoleOnlyService = async (role: string) => {
-  // Check if a user with this role already exists
-  let roleUser = await User.findOne({ role });
-
-  if (roleUser) {
-    return { user: roleUser, isNew: false };
-  }
-
-  // Create a role-only user (no email/password)
-  roleUser = await User.create({
-    role,
-    isVerified: true, // mark role as verified
-  });
-
-  return { user: roleUser, isNew: true };
-};
-
 
 
 
@@ -827,6 +810,5 @@ export const authServices = {
   changePassword,
   forgotPassword,
   resetPassword,
-  createRoleOnlyService,
   refreshToken,
 };

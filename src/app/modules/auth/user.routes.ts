@@ -9,7 +9,7 @@ import { authServices } from "./user.service";
 
 
 const router = Router();
-router.post('/create-role', authControllers.createRoleOnlyController);
+
 router.post('/userRegistration',validateRequest(authValidation.requestOtpZodSchema), authControllers.userRegistration,);
 router.post('/verifyEmail',validateRequest(authValidation.verifyEmailZodSchemar), authControllers.verifyEmailController,);
 router.post('/setPassword',validateRequest(authValidation.setPasswordValidationSchema), authControllers.setPasswordController,);
