@@ -90,7 +90,7 @@ const UserSchema = new Schema<TUser, UserModel>(
       type: String,
       enum: Object.values(UserRole),
       required: true,
-      default: UserRole.agencies,  // ✅ Fix: Add default
+      // default: UserRole.agencies,  
     },
      website: {
       type: String,
