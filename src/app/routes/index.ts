@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authRoutes } from '../modules/auth/user.routes';
 import { userRoutes } from '../modules/user/user.routes';
 import { adminRoutes } from '../modules/Dashboard/admin/admin.route';
+import { sosaleMediaRoutes } from '../modules/sociallink/social.routes';
 
 
 
@@ -21,10 +22,10 @@ const moduleRoutes = [
     path: '/admin',
     route: adminRoutes,
   },
-//   {
-//     path: '/rules',
-//     route: ruleRoutes,
-//   },
+  {
+    path: '/social',
+    route: sosaleMediaRoutes,
+  },
 //   {
 //     path: '/subscription',
 //     route: SubscriptionRoutes,
