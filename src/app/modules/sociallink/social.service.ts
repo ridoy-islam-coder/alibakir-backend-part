@@ -1,202 +1,181 @@
-// // social.service.ts
-// import axios from "axios";
-
-// const YOUTUBE_API_KEY = "AIzaSyAMLTu3H38-hb9jnUREr28YNB5KeHI4eyA";
-
-// export const getYoutubeChannelDataService = async (username: string) => {
-//   // 1️⃣ username → channel info
-//   const channelRes = await axios.get(
-//     "https://www.googleapis.com/youtube/v3/channels",
-//     {
-//       params: {
-//         part: "snippet,statistics,contentDetails",
-//         forUsername: username,
-//         key: YOUTUBE_API_KEY
-//       }
-//     }
-//   );
-
-//   const items = channelRes.data.items;
-
-//   if (!items || items.length === 0) {
-//     throw new Error("CHANNEL_NOT_FOUND");
-//   }
-
-//   const channel = items[0];
-
-//   // safety check for contentDetails
-//   if (!channel.contentDetails || !channel.contentDetails.relatedPlaylists) {
-//     throw new Error("UPLOADS_PLAYLIST_NOT_FOUND");
-//   }
-
-//   const uploadsPlaylistId = channel.contentDetails.relatedPlaylists.uploads;
-
-//   // 2️⃣ fetch channel videos
-//   const videoRes = await axios.get(
-//     "https://www.googleapis.com/youtube/v3/playlistItems",
-//     {
-//       params: {
-//         part: "snippet",
-//         playlistId: uploadsPlaylistId,
-//         maxResults: 10,
-//         key: YOUTUBE_API_KEY
-//       }
-//     }
-//   );
-
-//   const videoItems = videoRes.data.items || [];
-
-//   return {
-//     channel: {
-//       id: channel.id,
-//       title: channel.snippet?.title || "No title",
-//       description: channel.snippet?.description || "",
-//       subscribers: channel.statistics?.subscriberCount || "0",
-//       views: channel.statistics?.viewCount || "0",
-//       videos: channel.statistics?.videoCount || "0",
-//       thumbnail: channel.snippet?.thumbnails?.high?.url || ""
-//     },
-//     videos: videoItems.map((item: any) => ({
-//       videoId: item.snippet?.resourceId?.videoId || "",
-//       title: item.snippet?.title || "No title",
-//       thumbnail: item.snippet?.thumbnails?.high?.url || "",
-//       publishedAt: item.snippet?.publishedAt || ""
-//     }))
-//   };
-// };
-
 
 // social.service.ts
 import axios from "axios";
+import puppeteer from "puppeteer";
+const YOUTUBE_API_KEY = "AIzaSyAMLTu3H38-hb9jnUREr28YNB5KeHI4eyA";
 
-// keep the key in an environment variable, fallback to hard‑coded only for local testing
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "AIzaSyAMLTu3H38-hb9jnUREr28YNB5KeHI4eyA";
 
-// helper: strip @ and whitespace, try to extract a channel ID when possible
-function normalizeInput(input: string): string {
-  let value = input.trim();
-  // remove leading @ if present
-  if (value.startsWith("@")) {
-    value = value.slice(1);
-  }
-  // if the user pasted a full URL, pull out the last segment
-  const urlMatch = value.match(/(?:youtube\.com\/(?:channel\/|user\/|@)?)([A-Za-z0-9_-]+)/i);
-  if (urlMatch && urlMatch[1]) {
-    value = urlMatch[1];
-  }
-  return value;
-}
+export const getYoutubeChannelDataService = async (username: string) => {
+  const clean = username.replace(/^@/, "");
 
-// simple pattern to detect a channel ID (usually starts with UC and is ~24 chars)
-function looksLikeChannelId(str: string): boolean {
-  return /^UC[a-zA-Z0-9_-]{22,}$/i.test(str);
-}
+  let channel: any = null;
 
-export const getYoutubeChannelDataService = async (input: string) => {
-  const clean = normalizeInput(input);
-  let channelId: string | null = null;
-
-  // if the cleaned input already *looks* like a channel id we can skip search
-  if (looksLikeChannelId(clean)) {
-    channelId = clean;
-  } else {
-    // first try the search endpoint
-    console.log("youtube service search q=", clean);
-    const searchRes = await axios.get("https://www.googleapis.com/youtube/v3/search", {
-      params: {
-        part: "snippet",
-        q: clean,
-        type: "channel",
-        maxResults: 1,
-        key: YOUTUBE_API_KEY
-      }
-    });
-
-    console.log("youtube search response", JSON.stringify(searchRes.data, null, 2));
-    const searchItems = searchRes.data.items;
-    if (searchItems && searchItems.length > 0) {
-      channelId = searchItems[0].snippet.channelId;
-    }
-  }
-
-  if (!channelId) {
-    // attempt an old-style username lookup via forUsername parameter
-    console.log("youtube service trying forUsername lookup", clean);
-    try {
-      const usernameRes = await axios.get("https://www.googleapis.com/youtube/v3/channels", {
+  // 1️⃣ TRY OFFICIAL forHandle (NEW SYSTEM)
+  try {
+    const handleRes = await axios.get(
+      "https://www.googleapis.com/youtube/v3/channels",
+      {
         params: {
-          part: "id",
-          forUsername: clean,
+          part: "snippet,statistics",
+          forHandle: clean,
           key: YOUTUBE_API_KEY
         }
-      });
-      const usernameItems = usernameRes.data.items;
-      if (usernameItems && usernameItems.length > 0) {
-        channelId = usernameItems[0].id;
       }
-    } catch (e) {
-      // ignore - we'll handle not found below
+    );
+
+    if (handleRes.data.items && handleRes.data.items.length > 0) {
+      channel = handleRes.data.items[0];
     }
+  } catch (err) {
+    // ignore, fallback below
   }
 
-  if (!channelId) {
-    console.warn("youtube service no channel id from input", clean);
-    const err: any = new Error("CHANNEL_NOT_FOUND");
-    err.code = "CHANNEL_NOT_FOUND";
-    throw err;
-  }
+  // 2️⃣ FALLBACK: Search channel
+  if (!channel) {
+    const searchRes = await axios.get(
+      "https://www.googleapis.com/youtube/v3/search",
+      {
+        params: {
+          part: "snippet",
+          q: clean,
+          type: "channel",
+          maxResults: 1,
+          key: YOUTUBE_API_KEY
+        }
+      }
+    );
 
-  // fetch full channel details
-  const channelRes = await axios.get("https://www.googleapis.com/youtube/v3/channels", {
-    params: {
-      part: "snippet,statistics,contentDetails",
-      id: channelId,
-      key: YOUTUBE_API_KEY
+    if (!searchRes.data.items || searchRes.data.items.length === 0) {
+      throw new Error("CHANNEL_NOT_FOUND");
     }
-  });
 
-  const items = channelRes.data.items;
-  if (!items || items.length === 0) {
-    const err: any = new Error("CHANNEL_NOT_FOUND");
-    err.code = "CHANNEL_NOT_FOUND";
-    throw err;
-  }
+    const channelId = searchRes.data.items[0].id.channelId;
 
-  const channel = items[0];
-  const uploadsPlaylistId = channel.contentDetails?.relatedPlaylists?.uploads;
-  if (!uploadsPlaylistId) {
-    const err: any = new Error("UPLOADS_PLAYLIST_NOT_FOUND");
-    err.code = "UPLOADS_PLAYLIST_NOT_FOUND";
-    throw err;
-  }
+    const channelRes = await axios.get(
+      "https://www.googleapis.com/youtube/v3/channels",
+      {
+        params: {
+          part: "snippet,statistics",
+          id: channelId,
+          key: YOUTUBE_API_KEY
+        }
+      }
+    );
 
-  // fetch recent videos
-  const videoRes = await axios.get("https://www.googleapis.com/youtube/v3/playlistItems", {
-    params: {
-      part: "snippet",
-      playlistId: uploadsPlaylistId,
-      maxResults: 10,
-      key: YOUTUBE_API_KEY
+    if (!channelRes.data.items || channelRes.data.items.length === 0) {
+      throw new Error("CHANNEL_NOT_FOUND");
     }
-  });
 
-  const videoItems = videoRes.data.items || [];
+    channel = channelRes.data.items[0];
+  }
+
+  // 🛑 Safety
+  if (!channel) {
+    throw new Error("CHANNEL_NOT_FOUND");
+  }
+
+  // 3️⃣ FETCH VIDEOS (SAFE METHOD)
+  const videoRes = await axios.get(
+    "https://www.googleapis.com/youtube/v3/search",
+    {
+      params: {
+        part: "snippet",
+        channelId: channel.id,
+        type: "video",
+        order: "date",
+        maxResults: 10,
+        key: YOUTUBE_API_KEY
+      }
+    }
+  );
 
   return {
     channel: {
       id: channel.id,
-      title: channel.snippet?.title || "No title",
-      description: channel.snippet?.description || "",
-      subscribers: channel.statistics?.subscriberCount || "0",
-      views: channel.statistics?.viewCount || "0",
-      videos: channel.statistics?.videoCount || "0",
-      thumbnail: channel.snippet?.thumbnails?.high?.url || ""
+      title: channel.snippet.title,
+      description: channel.snippet.description,
+      subscribers: channel.statistics.subscriberCount,
+      views: channel.statistics.viewCount,
+      videos: channel.statistics.videoCount,
+      thumbnail: channel.snippet.thumbnails.high.url
     },
-    videos: videoItems.map((item: any) => ({
-      videoId: item.snippet?.resourceId?.videoId || "",
-      title: item.snippet?.title || "No title",
-      thumbnail: item.snippet?.thumbnails?.high?.url || "",
-      publishedAt: item.snippet?.publishedAt || ""
+    videos: videoRes.data.items.map((item: any) => ({
+      videoId: item.id.videoId,
+      title: item.snippet.title,
+      thumbnail: item.snippet.thumbnails.high.url,
+      publishedAt: item.snippet.publishedAt
     }))
   };
+};
+
+
+export const getTikTokProfileWithStats = async (username: string) => {
+  const clean = username.replace(/^@/, "");
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
+
+  try {
+    const page = await browser.newPage();
+
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
+    );
+
+    await page.goto(`https://www.tiktok.com/@${clean}`, {
+      waitUntil: "networkidle2",
+      timeout: 60000,
+    });
+
+    await page.waitForSelector("script#__UNIVERSAL_DATA_FOR_REHYDRATION__", {
+      timeout: 30000,
+    });
+
+    const json = await page.$eval(
+      "script#__UNIVERSAL_DATA_FOR_REHYDRATION__",
+      (el) => el.textContent
+    );
+
+    if (!json) throw new Error("PROFILE_NOT_FOUND");
+
+    const data: any = JSON.parse(json);
+
+    const user =
+      data.__DEFAULT_SCOPE__?.["webapp.user-detail"]?.userInfo?.user;
+
+    const stats =
+      data.__DEFAULT_SCOPE__?.["webapp.user-detail"]?.userInfo?.stats;
+
+    const itemList =
+      data.__DEFAULT_SCOPE__?.["webapp.user-detail"]?.itemList || [];
+
+    if (!user || !stats) throw new Error("PROFILE_DATA_MISSING");
+
+    const videos = itemList.slice(0, 10).map((item: any) => ({
+      videoId: item.id,
+      title: item.desc,
+      thumbnail: item.video?.cover,
+      publishedAt: item.createTime
+        ? new Date(item.createTime * 1000).toISOString()
+        : null,
+    }));
+
+    return {
+      username: clean,
+      nickname: user.nickname,
+      followers: stats.followerCount,
+      following: stats.followingCount,
+      likes: stats.heartCount,
+      totalVideos: stats.videoCount,
+      profileUrl: `https://www.tiktok.com/@${clean}`,
+      videos,
+    };
+  } catch (error: any) {
+    console.error("TikTok Puppeteer error:", error.message);
+    throw new Error("TIKTOK_PROFILE_NOT_FOUND");
+  } finally {
+    await browser.close();
+  }
 };

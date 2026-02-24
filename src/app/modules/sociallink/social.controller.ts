@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getYoutubeChannelDataService } from "./social.service";
+import {  getTikTokProfileWithStats, getYoutubeChannelDataService } from "./social.service";
 
 export const getYoutubeChannelDataController = async (
   req: Request,
@@ -43,6 +43,35 @@ export const getYoutubeChannelDataController = async (
     return res.status(500).json({
       success: false,
       message: error.message || "Server error"
+    });
+  }
+};
+
+
+export const getTikTokProfileController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { username } = req.params;
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: "Username is required",
+      });
+    }
+
+    const data = await getTikTokProfileWithStats(username as string);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error: any) {
+    return res.status(404).json({
+      success: false,
+      message: error.message,
     });
   }
 };
