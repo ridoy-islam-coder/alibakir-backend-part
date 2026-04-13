@@ -11,8 +11,6 @@ import { authServices } from "./user.service";
 const router = Router();
 
 router.post('/userRegistration',validateRequest(authValidation.requestOtpZodSchema), authControllers.userRegistration,);
-router.post('/verifyEmail',validateRequest(authValidation.verifyEmailZodSchemar), authControllers.verifyEmailController,);
-router.post('/setPassword',validateRequest(authValidation.setPasswordValidationSchema), authControllers.setPasswordController,);
 router.post('/login',validateRequest(authValidation.loginZodSchema), authControllers.login,);
 router.post( '/refresh-token',validateRequest(authValidation.refreshTokenValidationSchema),authControllers.refreshToken,);
 router.post('/google', authControllers.googleLogin);
@@ -23,7 +21,7 @@ router.post('/appleLogin', authControllers.appleLogin);
 router.post('/codeVerification', authControllers.codeVerification,);
 router.post('/userVerifyOtp', authControllers.verifyOtpController,);
 
-router.patch('/change-password',auth(USER_ROLE.agencies, USER_ROLE.influencer),authControllers.changePassword,);
+router.patch('/change-password',auth(USER_ROLE.USER, USER_ROLE.influencer),authControllers.changePassword,);
 router.patch('/reset-password', authControllers.resetPassword);
 
 

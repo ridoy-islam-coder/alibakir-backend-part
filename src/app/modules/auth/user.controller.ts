@@ -73,17 +73,15 @@ if (!user) {
 
 
 const userRegistration = catchAsync(async (req: Request, res: Response) => {
-  const { email,role } = req.body;
-  const result = await register(email, role);
+  const result = await register(req.body);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: `OTP sent to ${email}. Please verify to complete `,
-    data:result 
+    message: "User registered successfully",
+    data: result,
   });
 });
-
 
 
 
@@ -113,26 +111,8 @@ const userRegistration = catchAsync(async (req: Request, res: Response) => {
 //   });
 // });
 
-export const verifyEmailController = async (req: Request, res: Response) => {
-  const { email, otp } = req.body;
 
-  // const user = await authServices.verifyEmail({ email, otp });
 
-  const numericOtp = Number(otp);
-  if (isNaN(numericOtp)) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'OTP must be a number');
-  }
-const user = await authServices.verifyEmail ({ email, otp: numericOtp });
-
-  res.status(httpStatus.OK).json({
-    success: true,
-    message: 'Email verified successfully',
-    data: {
-      email: user.email,
-      isVerified: user.isVerified,
-    },
-  });
-};
 
 const login = catchAsync(async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -176,6 +156,14 @@ const login = catchAsync(async (req: Request, res: Response) => {
     },
   });
 });
+
+
+
+
+
+
+
+
 
 
 
@@ -601,34 +589,6 @@ export const userResetPassword = catchAsync(
 
 
 
-export const setPasswordController = catchAsync(
-  async (req: Request, res: Response) => {
-    const { email, newPassword, confirmPassword } = req.body;
-
-    if (!email || !newPassword || !confirmPassword) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        'Email, newPassword and confirmPassword are required',
-      );
-    }
-
-    if (newPassword !== confirmPassword) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Passwords do not match');
-    }
-   
-
-    const result = await authServices.SetPasswordService(email, newPassword);
-   
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: 'Password reset successful',
-       data: result,
-    });
-  },
-);
-
 
 
 
@@ -709,8 +669,8 @@ export const authControllers = {
   googleLogin,
 
   facebookLogin,
-  setPasswordController,
+
   userRegistration,
   appleLogin,
-  verifyEmailController,
+  
 };

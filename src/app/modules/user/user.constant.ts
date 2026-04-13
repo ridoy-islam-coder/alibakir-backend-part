@@ -1,5 +1,5 @@
 export const USER_ROLE = {
-  agencies: 'agencies',
+  USER: 'USER',
   admin: 'admin',
   influencer: 'influencer',
   

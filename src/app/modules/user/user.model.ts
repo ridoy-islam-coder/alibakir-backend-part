@@ -39,26 +39,22 @@ const UserSchema = new Schema<TUser, UserModel>(
     email: {
       type: String,
       unique: true,
-      required: function(this: TUser) {
-    return this.isVerified === true;
-  },
+       required: true,
+  
     },
     image: imageSchema,
     fullName: {
       type: String,
-      // required: function(this: TUser) {
-    // return this.isVerified === true;
-  // },
+      required: true,
+  
     },
     password: {
       type: String,
-      required: function(this: TUser) {
-      return this.isVerified === true;
-       },
-      default: '',
+      required: true, // ALWAYS required
       select: false,
+
     },
-    countryCode: {
+    country: {
       type: String,
       // required: function(this: TUser) { return this.isVerified === true; },
       sparse: true, // 🔥 important
@@ -92,14 +88,20 @@ const UserSchema = new Schema<TUser, UserModel>(
       required: true,
       // default: UserRole.agencies,  
     },
-     website: {
-      type: String,
-      default: '',// ✅ Fix: Add default
-    },
-      categore: {
-      type: String,
-      default: '',
-    },
+        howDidYouHear: {
+        type: String,
+        default: "",
+      },
+
+      subscribeToEmails: {
+        type: Boolean,
+        default: false,
+      },
+
+      termsAccepted: {
+        type: Boolean,
+        default: false,
+      },
    
     subscription: {
       plan: {
@@ -114,6 +116,10 @@ const UserSchema = new Schema<TUser, UserModel>(
         default: 'active',
       },
     },
+
+
+
+
 
     isActive: {
       type: Boolean,
@@ -131,6 +137,8 @@ const UserSchema = new Schema<TUser, UserModel>(
       type: VerificationSchema,
       required: false,
     },
+
+
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
@@ -141,22 +149,30 @@ const UserSchema = new Schema<TUser, UserModel>(
 
 //👉 Password change না হলে hash করবে না
 
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+// UserSchema.pre('save', async function (next) {
+//   if (!this.isModified('password')) return next();
+//   this.password = await bcrypt.hash(
+//     this.password as string,
+//     Number(config.bcrypt_salt_rounds),
+//   );
+//   next();
+// });
+
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+
   this.password = await bcrypt.hash(
-    this.password as string,
-    Number(config.bcrypt_salt_rounds),
+    this.password,
+    Number(config.bcrypt_salt_rounds)
   );
+
   next();
 });
-
-
-
 // set '' after saving password
-UserSchema.post('save', function (doc, next) {
-  doc.password = '';
-  next();
-});
+// UserSchema.post('save', function (doc, next) {
+//   doc.password = '';
+//   next();
+// });
 
 // Check if a user exists by email
 UserSchema.statics.isUserExist = async function (

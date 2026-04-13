@@ -179,3 +179,38 @@ export const getTikTokProfileWithStats = async (username: string) => {
     await browser.close();
   }
 };
+
+
+
+
+
+const IG_USER_ID = process.env.IG_USER_ID!;
+const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN!;
+
+export const getInstagramProfileService = async () => {
+  try {
+    const res = await axios.get(
+      `https://graph.facebook.com/v19.0/${IG_USER_ID}`,
+      {
+        params: {
+          fields:
+            "username,name,followers_count,follows_count,media_count,profile_picture_url",
+          access_token: ACCESS_TOKEN,
+        },
+      }
+    );
+
+    return {
+      username: res.data.username,
+      name: res.data.name,
+      followers: res.data.followers_count,
+      following: res.data.follows_count,
+      totalPosts: res.data.media_count,
+      profilePic: res.data.profile_picture_url,
+      profileUrl: `https://www.instagram.com/${res.data.username}/`,
+    };
+  } catch (error: any) {
+    console.error("Instagram Graph API error:", error.response?.data);
+    throw new Error("INSTAGRAM_PROFILE_NOT_FOUND");
+  }
+};

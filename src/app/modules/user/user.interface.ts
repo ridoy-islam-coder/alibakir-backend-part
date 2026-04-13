@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Model } from 'mongoose';
 export enum UserRole {
-  agencies = 'agencies',
+  USER = 'USER',
   admin = 'admin',
   influencer = 'influencer',
 }
@@ -43,9 +43,13 @@ export interface TUser {
   isDeleted: boolean;
   verification: Verification;
   accountType?: 'emailvarifi' | 'google' | 'facebook' | 'linkedin' | 'apple';
-  countryCode: string;
+  country: string;
   fcmToken?: string;
+  howDidYouHear?: string;
+  subscribeToEmails?: boolean;
+  termsAccepted?: boolean;
 }
+
 
 export interface UserModel extends Model<TUser> {
   isUserExist(email: string): Promise<TUser>;

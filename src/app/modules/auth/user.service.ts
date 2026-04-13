@@ -22,109 +22,65 @@ const otpCache = new Map<string, { payload: TRegister; otp: number; expiresAt: D
 
 
 
-export const register = async (email: string, role: UserRole) => {
 
-   if (!email) throw new Error('Email is required');
-  //  if (!/\S+@\S+\.\S+/.test(email)) throw new Error('Invalid email format');
-  //  if (email.length > 255) throw new Error('Email is too long');
-  //  if (email.length < 5) throw new Error('Email is too short');
-  //  if (/\s/.test(email)) throw new Error('Email cannot contain spaces');
-  //  if (email.toLowerCase().endsWith('@example.com')) throw new Error('Example.com emails are not allowed');
-  //  if (email.toLowerCase().endsWith('@test.com')) throw new Error('Test.com emails are not allowed');
-  //  if (email.toLowerCase().endsWith('@invalid.com')) throw new Error('Invalid.com emails are not allowed');
-   if (!role) throw new Error('Role is required');
+export const register = async (payload: any) => {
+  const {
+   fullName,
+    email,
+    password,
+    country,
+    role,
+    howDidYouHear,
+    subscribeToEmails,
+    termsAccepted,
+  } = payload;
 
-  const otp = Math.floor(100000 + Math.random() * 900000);
-  const expiresAt = moment().add(20, 'minutes').toDate();
-
-  let user = await User.findOne({ email });
-
-  if (user && user.isVerified) {
-    throw new Error('Email already verified');
+  // ✅ validation
+  if (!email || !password || !fullName ) {
+    throw new Error("Missing required fields");
   }
 
-  if (user) {
-    user.verification = { otp, expiresAt, status: false };
-    await user.save();
-  } else {
-    user = await User.create({
-      email,
-      role,
-      isVerified: false,
-      accountType: 'emailvarifi',
-      verification: { otp, expiresAt, status: false },
-    });
+  // ✅ check existing user
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    throw new Error("User already exists");
   }
 
- await sendEmail(
-  email,
-  'Verify Your Email Address',
-  `
-  <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f8; padding: 20px;">
-    <div style="
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 8px;
-      padding: 30px;
-      text-align: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    ">
 
-      <!-- Logo -->
-      <img 
-        src="https://yourdomain.com/logo.png" 
-        alt="Logo"
-        style="width: 120px; margin-bottom: 20px;"
-      />
+ 
 
-      <!-- Title -->
-      <h2 style="color: #222; margin-bottom: 10px;">
-        Email Verification
-      </h2>
+  // ✅ create user
+  const user = await User.create({
+    fullName,
+    email,
+    password,
+    country,
+    role: role,
+    howDidYouHear,
+    subscribeToEmails,
+    termsAccepted,
+  });
 
-      <p style="color: #555; font-size: 15px; line-height: 1.6;">
-        Thank you for signing up!  
-        Please use the verification code below to confirm your email address.
-      </p>
 
-      <!-- OTP Box -->
-      <div style="
-        display: inline-block;
-        margin: 25px 0;
-        padding: 15px 30px;
-        font-size: 28px;
-        letter-spacing: 6px;
-        color: #ffffff;
-        background-color: #4CAF50;
-        border-radius: 6px;
-        font-weight: bold;
-      ">
-        ${otp}
-      </div>
-
-      <!-- Expiry -->
-      <p style="color: #777; font-size: 13px;">
-        This code will expire on: ${expiresAt.toLocaleString()}
-      </p>
-
-      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-
-      <!-- Footer -->
-      <p style="color: #999; font-size: 12px; line-height: 1.5;">
-        If you did not create an account using this email address,  
-        please ignore this message.
-        <br />
-        For your security, do not share this verification code with anyone.
-      </p>
-    </div>
-  </div>
-  `
-);
-
+  const jwtPayload = {
+    userId: user?._id.toString(),
+    role: user?.role,
+  };
+  // 🔐 JWT TOKEN GENERATE
+  const accessToken = createToken(
+    jwtPayload,
+    config.jwt.jwt_access_secret as string,
+    config.jwt.jwt_access_expires_in as string,
+  );
 
   return {
-    message: `OTP sent to your email ${email}`,
+    user: {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+    accessToken,
   };
 };
 
@@ -135,36 +91,6 @@ export const register = async (email: string, role: UserRole) => {
 
 
 
-
- const verifyEmail = async ({ email, otp }: VerifyOtpPayload) => {
-   const user = await User.findOne({ email });
-
-  if (!user || !user.verification) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'OTP expired or not requested');
-  }
-
-  // OTP match check (number vs number)
-  if (user.verification.otp !== otp) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid OTP');
-  }
-
-  // Expiry check
-  if (user.verification.expiresAt < new Date()) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'OTP expired');
-  }
-
-user.isVerified = true;
-user.verification.status = true;
-
-// যদি empty থাকে, temporary assign করো
-user.fullName = user.fullName || '';
-user.phoneNumber = user.phoneNumber || '';
-user.countryCode = user.countryCode || '';
-user.gender = user.gender || 'Male'; // অথবা default
-await user.save();
-
-  return user;
-};
 
 
 
@@ -219,45 +145,45 @@ await user.save();
 
 
 
-const login = async (payload: Tlogin) => {
-  const user = await User.isUserExist(payload?.email as string);
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User Not Found');
-  }
-  if (!user?.isActive) {
-    throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
-  }
-  if (user?.isDeleted) {
-    throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
-  }
-  if (!user?.isVerified) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'user is not verified !');
-  }
+// const login = async (payload: Tlogin) => {
+//   const user = await User.isUserExist(payload?.email as string);
+//   if (!user) {
+//     throw new AppError(httpStatus.NOT_FOUND, 'User Not Found');
+//   }
+//   if (!user?.isActive) {
+//     throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
+//   }
+//   if (user?.isDeleted) {
+//     throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted !');
+//   }
+//   if (!user?.isVerified) {
+//     throw new AppError(httpStatus.BAD_REQUEST, 'user is not verified !');
+//   }
 
-  if (!(await User.isPasswordMatched(payload.password, user.password))) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'password do not match');
-  }
+//   if (!(await User.isPasswordMatched(payload.password, user.password))) {
+//     throw new AppError(httpStatus.BAD_REQUEST, 'password do not match');
+//   }
 
-  const jwtPayload = {
-    userId: user?._id.toString(),
-    role: user?.role,
-  };
-  const accessToken = createToken(
-    jwtPayload,
-    config.jwt.jwt_access_secret as string,
-    config.jwt.jwt_access_expires_in as string,
-  );
+//   const jwtPayload = {
+//     userId: user?._id.toString(),
+//     role: user?.role,
+//   };
+//   const accessToken = createToken(
+//     jwtPayload,
+//     config.jwt.jwt_access_secret as string,
+//     config.jwt.jwt_access_expires_in as string,
+//   );
 
-  const refreshToken = createToken(
-    jwtPayload,
-    config.jwt.jwt_refresh_secret as string,
-    config.jwt.jwt_refresh_expires_in as string,
-  );
-  return {
-    accessToken,
-    refreshToken,
-  };
-};
+//   const refreshToken = createToken(
+//     jwtPayload,
+//     config.jwt.jwt_refresh_secret as string,
+//     config.jwt.jwt_refresh_expires_in as string,
+//   );
+//   return {
+//     accessToken,
+//     refreshToken,
+//   };
+// };
 //change password
 const changePassword = async (id: string, payload: TchangePassword) => {
   const user = await User.IsUserExistbyId(id);
@@ -583,46 +509,6 @@ export const userVerifyOtp = async (email: string, otpInput: number) => {
 
 //   return null;
 // };
-export const SetPasswordService = async (
-  email: string,
-  newPassword: string
-) => {
-  const user = await User.findOne({ email }).select('+password');
-
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
-  }
-
-  // OTP must be verified
-  if (!user.verification || user.verification.status !== true) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'OTP not verified');
-  }
-
-  // Validate password
-  if (!newPassword || newPassword.trim() === '') {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Password cannot be empty');
-  }
-
-  // Hash password (optional but recommended)
-  // const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
-  // user.password = hashedPassword;
-  user.password = newPassword.trim();
-
-  // Clear OTP data safely
-  user.verification.otp = 0; // mark OTP as cleared
-  user.verification.expiresAt = new Date(); // or any valid Date
-  user.verification.status = false;
-
-  // Save user
-  await user.save();
-
-  // return null;
-
-  return {
-  email: user.email,
-  isVerified: user.verification?.status,
-};
-};
 
 
 
@@ -679,12 +565,7 @@ await user.save();
 //forgot password এর জন্য OTP verify করার পরে password set করার জন্য এই service টা ব্যবহার করব।
 
 const Enteryouremail = async (email: string) => {
-  const user = await User.findOne({
-    email,
-    isDeleted: false,
-    isVerified: true,
-    isActive: true,
-  });
+  const user = await User.findOne({ email, });
 
   if (!user) throw new AppError(404, 'Email not found or not verified');
 
@@ -769,36 +650,45 @@ const verifyOtp = (email: string, inputOtp: number) => {
   return true;
 };
 
+
 export const verifyOtpAndResetPassword = catchAsync(async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
+  // ✅ validation
   if (!email || !otp || !newPassword)
     throw new AppError(400, 'Email, OTP and newPassword are required');
 
-  // Verify OTP from cache
+  // ✅ cache check
   const record = passwordResetOtpCache.get(email);
   if (!record) throw new AppError(400, 'No OTP found for this email');
 
+  // ✅ expiry check
   if (record.expiresAt < new Date()) {
     passwordResetOtpCache.delete(email);
     throw new AppError(400, 'OTP expired');
   }
 
-  if (record.otp !== Number(otp)) {
+  // ✅ otp match check
+  if (record.otp !== Number(otp))
     throw new AppError(400, 'Invalid OTP');
-  }
 
-  // OTP verified → remove from cache
+  // ✅ cache clear
   passwordResetOtpCache.delete(email);
 
-  // Update password in DB
-  const user = await User.findOne({ email, isDeleted: false, isVerified: true });
+  // ✅ user check
+  const user = await User.findOne({ email });
   if (!user) throw new AppError(404, 'User not found');
 
+  // ✅ password hash - manually করছি কারণ findOneAndUpdate use করবো
   const saltRounds = Number(config.bcrypt_salt_rounds) || 12;
-  user.password = await bcrypt.hash(newPassword, saltRounds);
+  const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-  await user.save();
+  // ✅ update - pre('save') trigger হবে না, double hash হবে না
+  await User.findOneAndUpdate(
+    { email },
+    { password: hashedPassword },
+    { new: true }
+  );
 
   res.status(200).json({
     success: true,
@@ -808,12 +698,12 @@ export const verifyOtpAndResetPassword = catchAsync(async (req, res) => {
 
 export const authServices = {
   register,
-  verifyEmail,
-  login,
+
+  // login,
   Enteryouremail,
   verifyOtp,
   verifyOtpAndResetPassword,
-  SetPasswordService,
+
   userVerifyOtp,
   sendVerificationCode,
   changePassword,

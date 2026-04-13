@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTikTokProfileController, getYoutubeChannelDataController } from './social.controller';
+import { getInstagramProfileController, getTikTokProfileController, getYoutubeChannelDataController } from './social.controller';
 
 
 
@@ -9,6 +9,8 @@ const router = Router();
 router.get("/youtube/:username",getYoutubeChannelDataController);
 
 router.get("/tiktok/:username", getTikTokProfileController);
+
+router.get("/instagram/:username", getInstagramProfileController);
 
 
 export const sosaleMediaRoutes = router;

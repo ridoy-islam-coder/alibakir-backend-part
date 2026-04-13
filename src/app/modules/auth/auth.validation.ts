@@ -1,33 +1,6 @@
-// import { z } from 'zod';
 
-// const refreshTokenValidationSchema = z.object({
-//   cookies: z.object({
-//     refreshToken: z.string({
-//       required_error: 'Refresh token is required!',
-//     }),
-//   }),
-// });
-// const loginZodSchema = z.object({
-//   body: z.object({
-//     email: z.string().email({ message: 'Invalid email address' }),
-//     password: z
-//       .string()
-//       .min(6, { message: 'Password must be at least 6 characters' }),
-//   }),
-// });
-// const deleteAccountZodSchema = z.object({
-//   body: z.object({
-//     password: z.string({
-//       required_error: 'Password is required',
-//     }),
-//   }),
-// });
-// export const authValidation = {
-//   refreshTokenValidationSchema,
-//   loginZodSchema,
-//   deleteAccountZodSchema,
-// };
 import { z } from 'zod';
+import { UserRole } from '../user/user.interface';
 
 // const loginZodSchema = z.object({
 //   body: z.object({
@@ -117,31 +90,37 @@ export const requestOtpZodSchema = z.object({
 });
 
 
+
+
 export const registerZodSchema = z.object({
   body: z.object({
-    email: z.string().nonempty('Email is required').email('Must be a valid email'),
-    password: z.string().min(6, 'Password must be at least 6 characters').optional(),
-    fullName: z.string().nonempty('Full name is required').optional(),
-    phoneNumber: z.string().optional(),
-    countryCode: z.string().optional(),
-    accountType: z.enum(['emailvarifi', 'google', 'facebook']).default('emailvarifi'),
-    gender: z.enum(['Male','Female']).optional(),
+    fullName: z.string().min(2, "Full name is required"),
+
+    email: z.string().email("Invalid email format"),
+
+    password: z.string().min(6, "Password must be at least 6 characters"),
+
+    country: z.string().min(1, "Country is required"),
+
+    role: z.enum([
+      UserRole.admin,
+      UserRole.USER,
+      UserRole.influencer,
+    ]),
+
+    howDidYouHear: z.string().optional(),
+
+    subscribeToEmails: z.boolean().optional().default(false),
+
+    termsAccepted: z.boolean().refine((val) => val === true, {
+      message: "Terms must be accepted",
+    }),
   }),
-}).refine((data) => {
-  // Local signup হলে সব required
-  if (data.body.accountType === 'emailvarifi') {
-    return (
-      !!data.body.password &&
-      !!data.body.phoneNumber &&
-      !!data.body.countryCode
-    );
-  }
-  // Social login এ skip
-  return true;
-}, {
-  message: 'Local signup requires password, phoneNumber, and countryCode',
-  path: ['body']
 });
+
+
+
+
 
 
 export const verifyEmailZodSchema = z.object({
@@ -168,8 +147,15 @@ export const verifyEmailZodSchemar = z.object({
 
 export const loginZodSchema = z.object({
   body: z.object({
-    email: z.string().nonempty('Email is required').email('Must be a valid email'),
-    password: z.string().nonempty('Password is required'),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email("Must be a valid email"),
+
+    password: z
+      .string()
+      .min(1, "Password is required"),
   }),
 });
 

@@ -3,16 +3,18 @@ import { authRoutes } from '../modules/auth/user.routes';
 import { userRoutes } from '../modules/user/user.routes';
 import { adminRoutes } from '../modules/Dashboard/admin/admin.route';
 import { sosaleMediaRoutes } from '../modules/sociallink/social.routes';
+import { eventRoutes } from '../modules/event/event.routes';
+import { productsRoutes } from '../modules/product/product.routes';
 
 
 
 
 const router = Router();
 const moduleRoutes = [
-  {
-    path: '/users',
-    route: userRoutes,
-  },
+  // {
+  //   path: '/users',
+  //   route: userRoutes,
+  // },
 
   {
     path: '/auth',
@@ -25,6 +27,14 @@ const moduleRoutes = [
   {
     path: '/social',
     route: sosaleMediaRoutes,
+  },
+    {
+    path: '/event',
+    route: eventRoutes,
+  },
+   {
+    path: '/products',
+    route: productsRoutes,
   },
 //   {
 //     path: '/subscription',
